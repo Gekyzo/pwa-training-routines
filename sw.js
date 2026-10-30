@@ -16,6 +16,7 @@ const SHELL = [
   './src/session.js',
   './src/records.js',
   './src/sync.js',
+  './src/syncer.js',
   './src/ui/context.js',
   './src/ui/controls.js',
   './src/ui/install.js',

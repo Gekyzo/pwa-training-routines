@@ -9,6 +9,7 @@
 | `src/session.js` | The session on the device, the start route and the return from Google (ACC-1, ACC-4, ACC-5) | `storage` |
 | `src/records.js` | The doc as sync records and the diff of two sets of records (SYNC-1, SYNC-2) | `training` |
 | `src/sync.js` | The queue, the merge of pulled records, the check of each record, the duplicate names and the cursor (SYNC-5 to SYNC-7) | `records`, `training` |
+| `src/syncer.js` | The sync driver: the queue of each save, the run, the retries, the stream, the login, the logout and the reset (SYNC-2, SYNC-3, SYNC-8 to SYNC-13) | `records`, `sync`, `session`, `pocketbase`, `training`, `storage` |
 | `src/version.js` | Version rules and the update offer rule | nothing |
 | `src/whatsnew.js` | The parse of the release notes and the versions that a user has not seen | `version` |
 | `src/i18n.js` | The language choice and the translator | `locales/*` |
@@ -70,7 +71,8 @@
 
 The doc keys are in [07-notes.md](07-notes.md). The device preferences are `pwa-training-routines.lang`,
 `pwa-training-routines.hand`, `pwa-training-routines.theme`, `pwa-training-routines.modules` and `pwa-training-routines.onboarded`. The account keeps `pwa-training-routines.session` (ACC-5) and
-`pwa-training-routines.offline` (ACC-10), and `pwa-training-routines.oauth` in `sessionStorage` for the time of a Google redirect (ACC-4).
+`pwa-training-routines.offline` (ACC-10), and `pwa-training-routines.oauth` in `sessionStorage` for the time of a Google redirect (ACC-4). The
+sync keeps `pwa-training-routines.sync` and `pwa-training-routines.queue` ([09-sync.md](09-sync.md)).
 
 ## Change guide
 
@@ -97,6 +99,7 @@ The doc keys are in [07-notes.md](07-notes.md). The device preferences are `pwa-
 | `tests/session.test.js` | The session, the start route, the offline flag, the pending sign-in and the return URL (ACC-1, ACC-4, ACC-5, ACC-10) |
 | `tests/records.test.js` | The records of the doc, the doc of the records and the diff |
 | `tests/sync.test.js` | The queue, the merge, the check of each record, the duplicate names and the cursor |
+| `tests/syncer.test.js` | The sync driver against a fake server: queue, push, pull, merge, retries, stream, login, logout, reset and import |
 | `tests/storage.test.js` | Load, save, the corrupt copy, export, import and the device preferences |
 | `tests/install.test.js` | The install offer states (INS-1) |
 | `tests/swipe.test.js` | The settle rule of a row slide |
