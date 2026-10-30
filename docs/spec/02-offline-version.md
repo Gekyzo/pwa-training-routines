@@ -126,7 +126,8 @@ Rules of `sw.js`, `src/version.js`, `version.json`, `scripts/bump-version.mjs`,
 - **VER-22** The **What's new** sheet has the title `whatsNew.title` and `whatsNew.close`, and
   one block for each version, newest first: `whatsNew.version` with the day in the long form of
   the language, then the notes as a list. A `` `name` `` in a note shows as the key of the
-  walkthrough. The veil, `Close`, a drag down and `Escape` close it.
+  walkthrough. A text between two `**` in a note shows in bold, also with a key in it; a `**`
+  with no pair stays as text. The veil, `Close`, a drag down and `Escape` close it.
 - **VER-23** **Help** in Settings has the row `settings.whatsNew`, which shows the sheet with
   every version. The row is hidden while the notes have no version.
 

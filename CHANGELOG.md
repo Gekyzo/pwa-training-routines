@@ -4,7 +4,7 @@ User-visible changes, newest first.
 
 ## Unreleased
 
-No change.
+- What's new shows the text between two `**` of a note in bold (VER-22): `textParts` of `src/onboarding.js` gives such a part `strong: true`, also for a key inside it, and `src/ui/whatsnew.js` wraps it in a `<strong>`. A `**` with no pair stays as text.
 
 ## 0.1.1 - 2026-10-30
 
