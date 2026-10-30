@@ -19,6 +19,7 @@ The names of the screen are the English ones; `src/locales/es.js` is the source 
 | [07-notes.md](07-notes.md) | The notes demo: the domain that each app replaces |
 | [07-training.md](07-training.md) | Exercises, routines, workouts, records and the rest timer |
 | [08-account.md](08-account.md) | Google sign-in, the approval gate and the offline choice |
+| [09-sync.md](09-sync.md) | The sync of the doc with the account: records, queue, merge, login and logout |
 
 ## Rule identifiers
 
@@ -40,6 +41,7 @@ The rules DS-1 to DS-8 and LAY-1 to LAY-4 belong to the design system, `pwa-desi
 | `NOTE` | 07-notes |
 | `TRN` | 07-training |
 | `ACC` | 08-account |
+| `SYNC` | 09-sync |
 
 ## Words
 

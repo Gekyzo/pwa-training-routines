@@ -7,6 +7,8 @@
 | `src/config.js` | The slug of the app, which `npm run init` rewrites, and the URL of the account server | nothing |
 | `src/pocketbase.js` | The client of the account server: Google sign-in, refresh, the access row (ACC-3) | `config` |
 | `src/session.js` | The session on the device, the start route and the return from Google (ACC-1, ACC-4, ACC-5) | `storage` |
+| `src/records.js` | The doc as sync records and the diff of two sets of records (SYNC-1, SYNC-2) | `training` |
+| `src/sync.js` | The queue, the merge of pulled records, the check of each record, the duplicate names and the cursor (SYNC-5 to SYNC-7) | `records`, `training` |
 | `src/version.js` | Version rules and the update offer rule | nothing |
 | `src/whatsnew.js` | The parse of the release notes and the versions that a user has not seen | `version` |
 | `src/i18n.js` | The language choice and the translator | `locales/*` |
@@ -93,6 +95,8 @@ The doc keys are in [07-notes.md](07-notes.md). The device preferences are `pwa-
 | `tests/training.test.js` | The doc, its validation, its orders, the settings and the shared checks |
 | `tests/pocketbase.test.js` | The client of the account server and its URL (ACC-3, ACC-4, ACC-6) |
 | `tests/session.test.js` | The session, the start route, the offline flag, the pending sign-in and the return URL (ACC-1, ACC-4, ACC-5, ACC-10) |
+| `tests/records.test.js` | The records of the doc, the doc of the records and the diff |
+| `tests/sync.test.js` | The queue, the merge, the check of each record, the duplicate names and the cursor |
 | `tests/storage.test.js` | Load, save, the corrupt copy, export, import and the device preferences |
 | `tests/install.test.js` | The install offer states (INS-1) |
 | `tests/swipe.test.js` | The settle rule of a row slide |

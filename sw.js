@@ -14,6 +14,8 @@ const SHELL = [
   './src/training.js',
   './src/pocketbase.js',
   './src/session.js',
+  './src/records.js',
+  './src/sync.js',
   './src/ui/context.js',
   './src/ui/controls.js',
   './src/ui/install.js',
