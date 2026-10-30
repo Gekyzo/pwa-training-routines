@@ -87,3 +87,24 @@ The domain of the app: exercises, routines and workouts. Its pure modules are `s
   `error.workoutMissing`, `error.entryMissing` or `error.setMissing`.
 - **WO-10** The history of an exercise lists each workout with done sets of
   it, newest first, with those sets.
+
+## Records and units
+
+- **PR-1** The records of an exercise come from its done sets, at each read; nothing stores them.
+  `weight_reps` has the heaviest weight, the most reps, the best set (weight × reps) and the best
+  workout (the sum of weight × reps); `reps` has the most reps and the best workout (the sum of
+  reps); `time` the longest time; `distance_time` the farthest distance and the longest time. Each
+  record names its set and its workout. A value of zero makes no record, and a tie keeps the first
+  record.
+- **PR-8** A set keeps the unit of its weight. Records compare weights in kg. The screen shows a
+  weight in the unit of the settings, rounded to one decimal; a change of the unit rewrites no set.
+
+## Rest timer
+
+- **TMR-1** Marking a set done starts the rest timer. The timer stores its end as a time in
+  `pwa-training-routines.timer`, a state of the device that does not sync, so a reload or a locked
+  screen keeps the time left. At zero the phone vibrates, and a notification shows when the user
+  allowed them.
+- **TMR-2** The rest is the rest of the item of the day of the workout, else the rest of the
+  exercise, else the default rest of the settings.
+- **TMR-3** **+15 s** and **−15 s** change the time left, never below zero. **Skip** stops the timer.
