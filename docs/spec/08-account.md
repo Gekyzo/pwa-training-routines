@@ -2,8 +2,9 @@
 
 The account and the approval gate. The server is the PocketBase server of `pwa-server`: one
 account serves every app, and the administrator approves access per app. The app talks to it
-with `fetch`, with no SDK. The notes stay on the device: nothing syncs. The user picks one of
-two ways in: **Continue with Google**, or **Use offline** with no account.
+with `fetch` and `EventSource`, with no SDK. The doc stays on the device, and a device with an
+approved account also syncs it ([09-sync.md](09-sync.md)). The user picks one of two ways in:
+**Continue with Google**, or **Use offline** with no account.
 
 ## Rules
 
@@ -35,13 +36,37 @@ two ways in: **Continue with Google**, or **Use offline** with no account.
 - **ACC-7** **Check again** refreshes the session as ACC-6. A session that is still not approved
   shows the toast `account.waiting.still`.
 - **ACC-8** Settings has the group **Account**: with a session, the email and **Log out**; with
-  none, **Sign in with Google**, which opens **Sign in**. **Log out** removes the session only;
-  the notes and the preferences stay. It then routes as ACC-1: with the offline flag the app
-  stays open, else **Sign in** shows.
+  none, **Sign in with Google**, which opens **Sign in**. **Log out** follows ACC-13; the
+  preferences stay. It then routes as ACC-1: with the offline flag the app stays open, else
+  **Sign in** shows. Under the email the group shows the time of the last sync
+  (`account.lastSync`, or `account.neverSynced` before the first one).
 - **ACC-9** With no `localStorage` the app shows no account screen and works as before.
 - **ACC-10** The offline flag is `pwa-training-routines.offline` = `1` in `localStorage`. **Use offline**
   writes it; an approved session that opens the app removes it. A storage that refuses the
   write still opens the app for this start.
+- **ACC-11** A token counts as expired 60 s before its `exp` claim, or when the app cannot read it.
+  Before the first request for data of a sync, the app refreshes the token when it is expired or
+  when the last refresh is more than 10 minutes old. Each refresh reads the access row again
+  (ACC-3): an account that is no longer approved makes no request for data. After an auth error
+  the sync stops and the app shows **Sign in**; it keeps the doc and the queue. Until the next
+  login a save goes into the queue and no sync makes a request, so the rate limit of the auth
+  endpoints stays free for that login. A login of the same user continues the sync.
+- **ACC-12** A login of another user than the owner of the stored data first clears the doc, the
+  queue and the sync state of the previous user, never a device preference. When the queue is not
+  empty, the app first offers an export (`account.exportAsk`); after the export, or when the user
+  declines it, the login clears and goes on. A queue with no stored owner counts as the queue of
+  another user. A device with no stored owner and no queue clears nothing: its first login merges
+  (SYNC-12). A saved approved session whose login is not finished (the app closed during the
+  offer) refreshes its token at the next start, then the login goes on; an auth error removes the
+  session, and a network error waits for the next start.
+- **ACC-13** **Log out** when online sends the queue first, then clears the doc, the queue, the
+  sync state and the session. When the queue is still not empty after that (offline, or the sync
+  stopped), the app warns that the changes not sent are lost and asks `account.logoutAsk`: a no
+  stops the logout and changes nothing. A yes then offers an export (`account.logoutExport`).
+  After the export, or when the user declines it, the logout clears the same data. A session that
+  does not own the stored data (it waits for approval) removes only the session, and the doc stays.
+  A sync in progress at the logout, or at a login that clears, saves nothing and changes no doc
+  after it.
 
 ## Set-up outside the app
 

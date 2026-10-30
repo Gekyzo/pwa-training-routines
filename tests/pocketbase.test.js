@@ -119,3 +119,189 @@ test('a body that is not JSON is a server error', async () => {
   const { client } = fake({ ok: true, status: 200, json: async () => { throw new SyntaxError('x'); } });
   await assert.rejects(client.refresh('T'), { type: 'server' });
 });
+
+// ---- The sync records (SYNC-3, SYNC-4, SYNC-6) ----
+
+const OWNER = 'user1';
+const RECORDS = '/api/collections/training_records/records';
+const serverRow = (over = {}) => ({
+  id: 'r1', collectionId: 'c', owner: 'user1', kind: 'exercise', key: 'a', data: { n: 1 }, deleted: false,
+  created: '2026-10-24 08:00:00.000Z', updated: '2026-10-24 08:00:00.000Z', ...over,
+});
+const found = (...rows) => reply(200, { items: rows, page: 1, totalPages: rows.length ? 1 : 0 });
+const recordUnique = reply(400, {
+  data: { key: { code: 'validation_not_unique' }, kind: { code: 'validation_not_unique' }, owner: { code: 'validation_not_unique' } },
+});
+
+test('pull follows every page, sorts by updated and sends the cursor in the filter', async () => {
+  const { calls, client } = fake(
+    reply(200, { items: [serverRow()], page: 1, totalPages: 2 }),
+    reply(200, { items: [serverRow({ id: 'r2', key: 'b' })], page: 2, totalPages: 2 }),
+  );
+  const pulled = await client.pull('T', '2026-10-24 07:00:00.000Z', OWNER);
+  assert.equal(calls.length, 2);
+  assert.equal(calls[0].url.pathname, RECORDS);
+  assert.equal(calls[0].url.searchParams.get('filter'), 'owner = "user1" && updated >= "2026-10-24 07:00:00.000Z"');
+  assert.equal(calls[0].url.searchParams.get('sort'), 'updated');
+  assert.equal(calls[0].url.searchParams.get('perPage'), '500');
+  assert.equal(calls[1].url.searchParams.get('page'), '2');
+  assert.equal(calls[0].headers.Authorization, 'T');
+  assert.deepEqual(pulled.map((r) => r.id), ['r1', 'r2']);
+  assert.deepEqual(Object.keys(pulled[0]), ['id', 'kind', 'key', 'data', 'deleted', 'updated']);
+});
+
+test('pull with an empty cursor filters by the owner only, and stops with no totalPages', async () => {
+  const { calls, client } = fake(reply(200, { items: [serverRow()] }));
+  assert.equal((await client.pull('T', '', OWNER)).length, 1);
+  assert.equal(calls[0].url.searchParams.get('filter'), 'owner = "user1"');
+  assert.equal(calls.length, 1);
+});
+
+test('pull and push with no owner are an auth error and send nothing', async () => {
+  const { calls, client } = fake();
+  await assert.rejects(client.pull('T', '', ''), { type: 'auth' });
+  await assert.rejects(client.push('T', { kind: 'exercise', key: 'a', op: 'upsert', data: {} }, null), { type: 'auth' });
+  assert.equal(calls.length, 0);
+});
+
+test('push of an upsert with no record on the server creates it with the owner', async () => {
+  const { calls, client } = fake(found(), reply(200, serverRow()));
+  const rec = await client.push('T', { kind: 'exercise', key: 'a', op: 'upsert', data: { n: 1 } }, OWNER);
+  assert.equal(calls[0].method, 'GET');
+  assert.equal(calls[0].url.searchParams.get('filter'), 'owner = "user1" && kind = "exercise" && key = "a"');
+  assert.equal(calls[1].method, 'POST');
+  assert.deepEqual(calls[1].body, { owner: 'user1', kind: 'exercise', key: 'a', deleted: false, data: { n: 1 } });
+  assert.deepEqual(rec, { id: 'r1', kind: 'exercise', key: 'a', data: { n: 1 }, deleted: false, updated: '2026-10-24 08:00:00.000Z' });
+});
+
+test('push of an upsert patches the record found by kind and key, also a tombstone', async () => {
+  const { calls, client } = fake(found(serverRow({ deleted: true })), reply(200, serverRow({ data: { n: 2 } })));
+  const rec = await client.push('T', { kind: 'exercise', key: 'a', op: 'upsert', data: { n: 2 } }, OWNER);
+  assert.equal(calls[1].method, 'PATCH');
+  assert.equal(calls[1].url.pathname, `${RECORDS}/r1`);
+  assert.deepEqual(calls[1].body, { deleted: false, data: { n: 2 } });
+  assert.deepEqual(rec.data, { n: 2 });
+});
+
+test('a delete is a patch with deleted true and keeps the data (SYNC-6)', async () => {
+  const { calls, client } = fake(found(serverRow()), reply(200, serverRow({ deleted: true })));
+  const rec = await client.push('T', { kind: 'exercise', key: 'a', op: 'delete' }, OWNER);
+  assert.equal(calls[1].method, 'PATCH');
+  assert.deepEqual(calls[1].body, { deleted: true });
+  assert.equal(rec.deleted, true);
+});
+
+test('a delete with no record on the server resolves null and creates nothing (SYNC-6)', async () => {
+  const { calls, client } = fake(found());
+  assert.equal(await client.push('T', { kind: 'exercise', key: 'a', op: 'delete' }, OWNER), null);
+  assert.equal(calls.length, 1);
+});
+
+test('a create that the unique index refuses patches the record that another device made', async () => {
+  const { calls, client } = fake(found(), recordUnique, found(serverRow({ id: 'r7' })), reply(200, serverRow({ id: 'r7', data: { n: 3 } })));
+  const rec = await client.push('T', { kind: 'exercise', key: 'a', op: 'upsert', data: { n: 3 } }, OWNER);
+  assert.deepEqual(calls.map((c) => c.method), ['GET', 'POST', 'GET', 'PATCH']);
+  assert.equal(calls[3].url.pathname, `${RECORDS}/r7`);
+  assert.deepEqual(rec.data, { n: 3 });
+});
+
+test('a create refused with no field error is an invalid error, not a duplicate', async () => {
+  const { calls, client } = fake(found(), reply(400, { data: {} }));
+  await assert.rejects(client.push('T', { kind: 'exercise', key: 'a', op: 'upsert', data: {} }, OWNER), { type: 'invalid', status: 400 });
+  assert.equal(calls.length, 2);
+});
+
+test('a refused create keeps the field errors of the server', async () => {
+  const { client } = fake(found(), reply(400, { data: { data: { code: 'validation_json_size_limit' } } }));
+  await assert.rejects(
+    client.push('T', { kind: 'exercise', key: 'a', op: 'upsert', data: {} }, OWNER),
+    (error) => error.fields.data.code === 'validation_json_size_limit',
+  );
+});
+
+test('a 429 of a push is a rate error, a 5xx of a pull a server error', async () => {
+  const { client } = fake(reply(429, {}), reply(503, {}));
+  await assert.rejects(client.push('T', { kind: 'exercise', key: 'a', op: 'upsert', data: {} }, OWNER), { type: 'rate', status: 429 });
+  await assert.rejects(client.pull('T', '', OWNER), { type: 'server', status: 503 });
+});
+
+class FakeSource {
+  static last;
+  constructor(url) {
+    this.url = url;
+    this.listeners = {};
+    this.closed = false;
+    FakeSource.last = this;
+  }
+  addEventListener(name, listener) {
+    this.listeners[name] = listener;
+  }
+  emit(name, data) {
+    return this.listeners[name]({ data: JSON.stringify(data) });
+  }
+  close() {
+    this.closed = true;
+  }
+}
+
+test('subscribe posts the clientId of PB_CONNECT and passes record events on (SYNC-3)', async () => {
+  const seen = [];
+  const log = [];
+  const fetch = async (url, init) => {
+    log.push({ url, method: init.method, headers: init.headers, body: JSON.parse(init.body) });
+    return reply(204, null);
+  };
+  const client = createClient({ url: URL_, fetch, EventSource: FakeSource });
+  const stop = client.subscribe('T', (rec) => seen.push(rec));
+  assert.equal(FakeSource.last.url, `${URL_}/api/realtime`);
+  await FakeSource.last.emit('PB_CONNECT', { clientId: 'cid' });
+  assert.equal(log[0].method, 'POST');
+  assert.equal(log[0].url, `${URL_}/api/realtime`);
+  assert.equal(log[0].headers.Authorization, 'T');
+  assert.deepEqual(log[0].body, { clientId: 'cid', subscriptions: ['training_records'] });
+  FakeSource.last.emit('training_records', { action: 'update', record: serverRow() });
+  FakeSource.last.emit('training_records', { action: 'delete', record: serverRow({ id: 'r2' }) });
+  assert.deepEqual(seen.map((r) => [r.id, r.deleted]), [['r1', false], ['r2', true]]);
+  stop();
+  assert.equal(FakeSource.last.closed, true);
+});
+
+test('subscribe drops a malformed event but does not swallow an error of the consumer', () => {
+  const client = createClient({ url: URL_, fetch: async () => reply(204, null), EventSource: FakeSource });
+  const seen = [];
+  client.subscribe('T', (rec) => {
+    seen.push(rec);
+    throw new Error('consumer');
+  });
+  FakeSource.last.listeners.training_records({ data: 'not json' });
+  assert.equal(seen.length, 0);
+  assert.throws(() => FakeSource.last.emit('training_records', { action: 'update', record: serverRow() }), /consumer/);
+});
+
+test('a failed subscription is silent', async () => {
+  const fetch = async () => {
+    throw new TypeError('offline');
+  };
+  const client = createClient({ url: URL_, fetch, EventSource: FakeSource });
+  client.subscribe('T', () => {});
+  await FakeSource.last.emit('PB_CONNECT', { clientId: 'cid' });
+  await FakeSource.last.listeners.PB_CONNECT({ data: 'not json' });
+});
+
+test('subscribe reads the token at each PB_CONNECT and calls onReconnect at each one after the first', async () => {
+  const tokens = [];
+  const fetch = async (url, init) => {
+    tokens.push(init.headers.Authorization);
+    return reply(204, null);
+  };
+  const client = createClient({ url: URL_, fetch, EventSource: FakeSource });
+  let token = 'first';
+  let reconnects = 0;
+  client.subscribe(() => token, () => {}, { onReconnect: () => { reconnects += 1; } });
+  await FakeSource.last.emit('PB_CONNECT', { clientId: 'a' });
+  assert.equal(reconnects, 0);
+  token = 'second';
+  await FakeSource.last.emit('PB_CONNECT', { clientId: 'b' });
+  assert.deepEqual(tokens, ['first', 'second']);
+  assert.equal(reconnects, 1);
+});
