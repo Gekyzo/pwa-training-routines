@@ -17,6 +17,7 @@ The names of the screen are the English ones; `src/locales/es.js` is the source 
 | [05-layout.md](05-layout.md) | Navigation, sections, modules, Settings and the walkthrough |
 | [06-i18n.md](06-i18n.md) | The languages and the rules of the text |
 | [07-notes.md](07-notes.md) | The notes demo: the domain that each app replaces |
+| [07-training.md](07-training.md) | Exercises, routines, workouts, records and the rest timer |
 | [08-account.md](08-account.md) | Google sign-in, the approval gate and the offline choice |
 
 ## Rule identifiers
@@ -37,6 +38,7 @@ The rules DS-1 to DS-8 and LAY-1 to LAY-4 belong to the design system, `pwa-desi
 | `NAV`, `MOD`, `SET`, `ONB` | 05-layout |
 | `I18N` | 06-i18n |
 | `NOTE` | 07-notes |
+| `TRN` | 07-training |
 | `ACC` | 08-account |
 
 ## Words

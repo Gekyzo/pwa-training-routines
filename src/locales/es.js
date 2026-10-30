@@ -86,4 +86,11 @@ export default {
   'error.textRequired': 'Escribe un texto.',
   'error.textTooLong': 'Máximo {max} caracteres.',
   'error.noteMissing': 'La nota ya no existe.',
+  'error.nameRequired': 'Escribe un nombre.',
+  'error.nameTooLong': 'Máximo {max} caracteres.',
+  'error.commentTooLong': 'Máximo {max} caracteres.',
+  'error.numberRequired': 'Escribe un número.',
+  'error.numberRange': 'Escribe un número de {min} a {max}.',
+  'error.unit': 'Unidad desconocida.',
+  'exercise.unknown': 'Ejercicio borrado',
 };
