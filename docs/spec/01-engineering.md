@@ -5,7 +5,7 @@
 | Module | Responsibility | May import |
 |---|---|---|
 | `src/config.js` | The slug of the app, which `npm run init` rewrites, and the URL of the account server | nothing |
-| `src/pocketbase.js` | The client of the account server: Google sign-in, refresh, the access row (ACC-3) | `config` |
+| `src/pocketbase.js` | The client of the account server: Google sign-in, refresh, the access row (ACC-3), and the pull, the push and the realtime stream of the records (SYNC-3, SYNC-4, SYNC-6) | `config` |
 | `src/session.js` | The session on the device, the start route and the return from Google (ACC-1, ACC-4, ACC-5) | `storage` |
 | `src/records.js` | The doc as sync records and the diff of two sets of records (SYNC-1, SYNC-2) | `training` |
 | `src/sync.js` | The queue, the merge of pulled records, the check of each record, the duplicate names and the cursor (SYNC-5 to SYNC-7) | `records`, `training` |
@@ -93,7 +93,7 @@ The doc keys are in [07-notes.md](07-notes.md). The device preferences are `pwa-
 |---|---|
 | `tests/notes.test.js` | The note operations and the validation of the doc (demo) |
 | `tests/training.test.js` | The doc, its validation, its orders, the settings and the shared checks |
-| `tests/pocketbase.test.js` | The client of the account server and its URL (ACC-3, ACC-4, ACC-6) |
+| `tests/pocketbase.test.js` | The client of the account server and its URL (ACC-3, ACC-4, ACC-6), the pull, the push and the stream of the records (SYNC-3, SYNC-4, SYNC-6) |
 | `tests/session.test.js` | The session, the start route, the offline flag, the pending sign-in and the return URL (ACC-1, ACC-4, ACC-5, ACC-10) |
 | `tests/records.test.js` | The records of the doc, the doc of the records and the diff |
 | `tests/sync.test.js` | The queue, the merge, the check of each record, the duplicate names and the cursor |

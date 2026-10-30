@@ -1,10 +1,15 @@
-// The client of the PocketBase server (ACC-3, ACC-4, ACC-6). `fetch` is injected, so a test runs
-// with no network. No SDK: the app calls the REST API of PocketBase directly.
+// The client of the PocketBase server (ACC-3, ACC-4, ACC-6) and of the sync records (SYNC-3,
+// SYNC-4, SYNC-6). `fetch` and `EventSource` are injected, so a test runs with no network. No SDK:
+// the app calls the REST API of PocketBase directly.
 import { APP_SLUG } from '#config';
 
 const USERS = '/api/collections/users';
 const ACCESS = '/api/collections/app_access/records';
 const APPS = '/api/collections/apps/records';
+// SYNC-1: the records of this app, one collection on the server.
+export const COLLECTION = 'training_records';
+const RECORDS = `/api/collections/${COLLECTION}/records`;
+const PAGE = 500;
 
 export class PocketBaseError extends Error {
   constructor(type, status = 0, fields = {}) {
@@ -37,7 +42,19 @@ const sessionOf = ({ token, record }, approved) => ({
   user: { id: record.id, email: record.email, name: record.name ?? '', approved },
 });
 
-export const createClient = ({ url, fetch }) => {
+// The fields of a server record that the app keeps.
+const serverRecOf = ({ id, kind, key, data, deleted, updated }) => ({ id, kind, key, data, deleted: deleted === true, updated });
+
+// Every request for records names the owner: with no owner nothing is sent.
+const ofOwner = (owner) => {
+  if (!owner) throw new PocketBaseError('auth');
+  return `owner = ${quoted(owner)}`;
+};
+
+// SYNC-6: a tombstone keeps its data, so only the flag changes.
+const bodyOf = ({ op, data }) => (op === 'delete' ? { deleted: true } : { deleted: false, data });
+
+export const createClient = ({ url, fetch, EventSource = null }) => {
   const base = url.replace(/\/+$/, '');
 
   const call = async (method, path, { token, body, query } = {}) => {
@@ -88,6 +105,38 @@ export const createClient = ({ url, fetch }) => {
 
   const withAccess = async (auth) => sessionOf(auth, (await accessOf(auth.token, auth.record.id)) === 'approved');
 
+  const findRecord = async (token, { kind, key }, owner) => {
+    const page = await call('GET', RECORDS, {
+      token,
+      query: { filter: `${ofOwner(owner)} && kind = ${quoted(kind)} && key = ${quoted(key)}`, perPage: '1' },
+    });
+    return page.items[0] ? serverRecOf(page.items[0]) : null;
+  };
+
+  const patch = async (token, id, body) => serverRecOf(await call('PATCH', `${RECORDS}/${id}`, { token, body }));
+
+  // A create that the unique index `(owner, kind, key)` refuses (another device made the record
+  // meanwhile) patches the record that it finds.
+  const create = async (token, change, owner) => {
+    try {
+      return serverRecOf(await call('POST', RECORDS, { token, body: { owner, kind: change.kind, key: change.key, ...bodyOf(change) } }));
+    } catch (error) {
+      if (!isUniqueViolation(error)) throw error;
+      const found = await findRecord(token, change, owner);
+      if (!found) throw error;
+      return patch(token, found.id, bodyOf(change));
+    }
+  };
+
+  const pages = async (token, path, query, map) => {
+    const all = [];
+    for (let page = 1; ; page += 1) {
+      const result = await call('GET', path, { token, query: { ...query, perPage: String(PAGE), page: String(page) } });
+      all.push(...result.items.map(map));
+      if (!(result.totalPages > page)) return all;
+    }
+  };
+
   return {
     oauthStart: async (redirectUrl) => {
       const methods = await call('GET', `${USERS}/auth-methods`);
@@ -110,5 +159,53 @@ export const createClient = ({ url, fetch }) => {
     },
 
     refresh: async (token) => withAccess(await call('POST', `${USERS}/auth-refresh`, { token })),
+
+    // SYNC-4: every record of the owner with `updated` at or after the cursor, oldest first; an
+    // empty cursor pulls every record.
+    pull: async (token, since, owner) => {
+      const filter = since ? `${ofOwner(owner)} && updated >= ${quoted(since)}` : ofOwner(owner);
+      return pages(token, RECORDS, { filter, sort: 'updated' }, serverRecOf);
+    },
+
+    // SYNC-6: the record of `(kind, key)` is patched, or created for an upsert. A delete never
+    // creates: with no record on the server it resolves to null.
+    push: async (token, change, owner) => {
+      const found = await findRecord(token, change, owner);
+      if (found) return patch(token, found.id, bodyOf(change));
+      if (change.op === 'delete') return null;
+      return create(token, change, owner);
+    },
+
+    // SYNC-3: the returned function closes the stream. A failed subscription is silent: the sync
+    // also runs at the start, at `online` and after a save, so the stream only makes a sync sooner.
+    // `token` is a text or a function that gives the token at each connect, since the browser
+    // connects again by itself and by then the token may be a refreshed one. `onReconnect` runs at
+    // each connect after the first: the stream missed the changes of the time between.
+    subscribe: (token, onChange, { onReconnect = () => {} } = {}) => {
+      const tokenOf = typeof token === 'function' ? token : () => token;
+      const source = new EventSource(`${base}/api/realtime`);
+      let connects = 0;
+      source.addEventListener('PB_CONNECT', async (event) => {
+        connects += 1;
+        if (connects > 1) onReconnect();
+        try {
+          const { clientId } = JSON.parse(event.data);
+          await call('POST', '/api/realtime', { token: tokenOf(), body: { clientId, subscriptions: [COLLECTION] } });
+        } catch {
+          // See above.
+        }
+      });
+      source.addEventListener(COLLECTION, (event) => {
+        let rec;
+        try {
+          const { action, record } = JSON.parse(event.data);
+          rec = serverRecOf(action === 'delete' ? { ...record, deleted: true } : record);
+        } catch {
+          return; // A malformed event is dropped.
+        }
+        onChange(rec);
+      });
+      return () => source.close();
+    },
   };
 };
