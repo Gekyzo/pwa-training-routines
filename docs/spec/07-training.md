@@ -48,3 +48,13 @@ The domain of the app: exercises, routines and workouts. Its pure modules are `s
 - **EX-6** An exercise that a workout holds is not deleted (`error.exerciseInUse`): it is archived,
   and an archived exercise keeps its history and leaves the pickers. An exercise that a routine
   holds is not deleted (`error.exerciseInRoutine`).
+
+## Routines
+
+- **RT-1** A routine has a name, unique with no regard to case (`error.routineTaken`), and an
+  ordered list of days. A day has a name, unique in its routine (`error.dayTaken`), and an ordered
+  list of items. An item names an exercise of the doc and its target: sets (1 to 20), and
+  optionally reps, a top of a range of reps, a weight and a rest. A top needs reps at or below it
+  (`error.repsRange`). Days and items move to an index, clamped to the ends. A routine, a day or an
+  item that is not in the doc is `error.routineMissing`, `error.dayMissing` or `error.itemMissing`.
+  A deleted routine leaves its workouts as they are: they keep the names of their start.

@@ -138,4 +138,10 @@ export default {
   'seed.exercise.running': 'Running',
   'seed.exercise.cycling': 'Cycling',
   'seed.exercise.rowing': 'Rowing',
+  'error.routineTaken': 'A routine has that name already.',
+  'error.routineMissing': 'The routine no longer exists.',
+  'error.dayTaken': 'The routine has a day with that name already.',
+  'error.dayMissing': 'The day no longer exists.',
+  'error.itemMissing': 'The exercise is no longer in the day.',
+  'error.repsRange': 'A top of reps needs reps at or below it.',
 };

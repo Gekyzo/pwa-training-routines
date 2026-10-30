@@ -138,4 +138,10 @@ export default {
   'seed.exercise.running': 'Correr',
   'seed.exercise.cycling': 'Bicicleta',
   'seed.exercise.rowing': 'Remo (máquina)',
+  'error.routineTaken': 'Ya hay una rutina con ese nombre.',
+  'error.routineMissing': 'La rutina ya no existe.',
+  'error.dayTaken': 'La rutina ya tiene un día con ese nombre.',
+  'error.dayMissing': 'El día ya no existe.',
+  'error.itemMissing': 'El ejercicio ya no está en el día.',
+  'error.repsRange': 'El máximo de repeticiones necesita un mínimo igual o menor.',
 };
