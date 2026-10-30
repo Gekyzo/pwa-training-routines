@@ -2,7 +2,7 @@
 
 The training doc lives on each device for offline use. A device signed in to an approved account
 also syncs it with the PocketBase server of `pwa-server`. The rules copy the sync of
-`pwa-shopping-list` with no shares. Its pure modules are `src/records.js` and `src/sync.js`; the
+`pwa-shopping-list` with no shares; the account rules of the sync are ACC-11 to ACC-13. Its pure modules are `src/records.js` and `src/sync.js`; the
 driver `src/syncer.js` takes the client, the storage, the clock and the timers as parameters. Each
 has a test file of the same name.
 
@@ -117,8 +117,9 @@ and view rules. The migration lives in `pwa-server`; this app only reads and wri
   a sync that the server answered (ok, a rate limit or an auth error), even when the browser sent no
   `online` event, as some phones do after airplane mode. A stop at the rate limit is not offline.
   When the app shows again (`visibilitychange` to visible) and the browser says it is online, this
-  counts as the `online` event. The status also gives the number of changes not sent, the time of
-  the last sync and whether the sync stopped at an auth error.
+  counts as the `online` event. While the status is offline and a session is saved, a note says
+  `account.offlineNote`. The status also gives the number of changes not sent, the time of the last
+  sync and whether the sync stopped at an auth error (ACC-11).
 - **SYNC-12** The first login of a device merges the device and the account: the base of the sync
   is the empty doc, so each local category, exercise, routine and workout, and settings that are not
   the defaults, go into the queue, and the pull brings the entities of the account. An entity on
@@ -130,6 +131,17 @@ and view rules. The migration lives in `pwa-server`; this app only reads and wri
   server records and the session. The sync stops first: a sync in progress becomes stale and saves
   nothing, the timers stop, the stream closes and the queue is dropped. It sends nothing; the data
   of the account stays on the server.
+
+## Departures from the shopping list
+
+1. **The first login merges** (SYNC-12), in place of the replace of the shopping list: nothing is
+   dropped, so no copy of the doc before the login is kept.
+2. **Another user** clears the device first, after an export offer when the queue is not empty
+   (ACC-12).
+3. **No order is synced**: each list is sorted when it is read (TRN-3).
+4. **Each record is checked alone** (SYNC-7): one bad record never stops the merge.
+5. **No banner** for a device with data and no session: the start route of ACC-1 and ACC-10 stays.
+6. **A push finds the record by `kind` and `key`** (SYNC-6): the device keeps no map of server ids.
 
 ## Keys
 
