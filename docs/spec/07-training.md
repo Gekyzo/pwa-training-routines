@@ -108,3 +108,11 @@ The domain of the app: exercises, routines and workouts. Its pure modules are `s
 - **TMR-2** The rest is the rest of the item of the day of the workout, else the rest of the
   exercise, else the default rest of the settings.
 - **TMR-3** **+15 s** and **−15 s** change the time left, never below zero. **Skip** stops the timer.
+
+## Backup
+
+- **DATA-1** The doc lives on the device and works with no network, with an account or with none.
+- **DATA-2** **Export JSON** writes the doc, which **Import** reads back. **Export CSV** writes one
+  row for each done set, oldest first, with the columns `Date`, `Exercise`, `Category`, `Weight`,
+  `Weight Unit`, `Reps`, `Distance`, `Distance Unit` (`m`), `Time` (`m:ss` or `h:mm:ss`) and
+  `Comment`, quoted as RFC 4180. The file has the name of the JSON export with `.csv`.

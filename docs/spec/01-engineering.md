@@ -22,6 +22,7 @@
 | `src/units.js` | The conversion of a weight between kg and lb, and the clock text (PR-8) | nothing |
 | `src/bests.js` | The personal records of an exercise (PR-1) | `training`, `units` |
 | `src/timer.js` | The rest of a set and the rest timer (TMR-1 to TMR-3) | `training` |
+| `src/csv.js` | The CSV export of the done sets (DATA-2) | `training`, `units` |
 | `src/swipe.js` | The rule that settles the slide of a row (optional) | nothing |
 | `src/reorder.js` | The geometry of a row move (optional) | nothing |
 | `src/particles.js` | The particles of a picture and their place in time (optional) | nothing |
@@ -103,6 +104,7 @@ The doc keys are in [07-notes.md](07-notes.md). The device preferences are `pwa-
 | `tests/units.test.js` | The conversion and the rounding of a weight, and the clock text |
 | `tests/bests.test.js` | The records of each type, the tie and the units |
 | `tests/timer.test.js` | The rest of a set, the time left, the change of time and the stored timer |
+| `tests/csv.test.js` | The rows, the order and the quotes of the CSV export |
 | `tests/pocketbase.test.js` | The client of the account server and its URL (ACC-3, ACC-4, ACC-6) |
 | `tests/session.test.js` | The session, the start route, the offline flag, the pending sign-in and the return URL (ACC-1, ACC-4, ACC-5, ACC-10) |
 | `tests/storage.test.js` | Load, save, the corrupt copy, export, import and the device preferences |
