@@ -45,6 +45,19 @@ export const hasStoredDoc = (storage, key) => {
   }
 };
 
+// SET-2: removes each key of this app, `<slug>.*`, the corrupt copies included, and no key of
+// another app of the origin. The keys are read first: a removal moves the indices of the rest.
+export const resetAll = (storage) => {
+  try {
+    const prefix = keyOf('');
+    const keys = Array.from({ length: storage.length }, (_, index) => storage.key(index));
+    keys.filter((key) => key?.startsWith(prefix)).forEach((key) => storage.removeItem(key));
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 export const exportJson = (doc) => JSON.stringify(doc, null, 2);
 
 // Local time, to the second, so two exports of one day get two names.

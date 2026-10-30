@@ -4,7 +4,7 @@ Lo que cambia para ti en cada versión de la app. La versión más nueva va prim
 
 ## Unreleased
 
-No change.
+- **Borrar todos los datos** en Ajustes borra las notas y las preferencias de este dispositivo, y la app empieza como nueva.
 
 ## 0.1.3 - 2026-10-25
 

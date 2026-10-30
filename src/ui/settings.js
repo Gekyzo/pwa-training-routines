@@ -1,11 +1,12 @@
 import { normalizeNotes } from '#notes';
-import { exportJson, exportFilename, importJson } from '#storage';
+import { exportJson, exportFilename, importJson, resetAll } from '#storage';
 import { LANGUAGES, LANGUAGE_NAMES } from '#i18n';
 import { switchModule } from '#modules';
 import {
   $,
   el,
   state,
+  storage,
   t,
   lang,
   chosen,
@@ -25,6 +26,7 @@ import {
 } from '#ui/context';
 import { runUpdate } from '#ui/update';
 import { renderOnboarding } from '#ui/onboarding';
+import { signedIn } from '#ui/account';
 
 // The value of a row of Preferences is the text of the option that its select has.
 const renderValues = () => {
@@ -81,6 +83,17 @@ export const bind = () => {
     download(exportFilename(new Date()), exportJson(state));
   });
   $('import').addEventListener('click', () => $('import-file').click());
+  // SET-2: the app starts again as a new install, with the walkthrough. With no storage the data is
+  // only in memory, so the reload alone clears it. The session key goes too, so a signed-in device
+  // opens Sign in.
+  $('reset').addEventListener('click', () => {
+    if (!window.confirm(t(signedIn() ? 'reset.confirmLocal' : 'reset.confirm'))) return;
+    if (storage && !resetAll(storage)) {
+      showToast(t('error.resetFailed'));
+      return;
+    }
+    location.reload();
+  });
   $('language').addEventListener('change', (event) => {
     setLanguage(event.target.value || null);
     applyLanguage();

@@ -97,3 +97,7 @@ test('Settings has the Account group: the email and Log out, or Sign in with Goo
   assert.match(group, /<button id="logout" class="settings-row" type="button">/);
   assert.match(group, /<button id="account-login" class="settings-row" type="button"><span class="settings-row-label" data-i18n="account.signIn"><\/span>/);
 });
+
+test('Backup ends with Delete all data, a danger row with no chevron (SET-2)', () => {
+  assert.match(body, /<button id="import" class="settings-row" type="button">.*?<\/button>\s*<button id="reset" class="settings-row danger" type="button"><span class="settings-row-label" data-i18n="settings.reset"><\/span><\/button>\s*<\/div>/);
+});

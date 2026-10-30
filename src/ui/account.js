@@ -29,6 +29,9 @@ let refreshing = null;
 
 const sessionNow = () => (client ? loadSession(storage) : null);
 
+// True while a session is saved: Delete all data then also logs out (SET-2).
+export const signedIn = () => sessionNow() !== null;
+
 const isOffline = () => offlineNow || loadOffline(storage);
 
 export const renderAccount = () => {

@@ -32,11 +32,18 @@ LAY-1 to LAY-4 of the design system (04-design-system). In this app the Notes se
 ## Settings
 
 - **SET-1** Settings is a column of groups, each a `list-group-head` above a `list-group` of
-  settings rows, as in pwa-shopping-list: **Backup** (**Export**, **Import**), **Preferences**
+  settings rows, as in pwa-shopping-list: **Backup** (**Export**, **Import**, **Delete all data**), **Preferences**
   (**Language**, **Hand**, **Theme**), **Modules** (MOD-1), **App** (INS-2) and **Help** (ONB-3),
   then the version lines (VER-4). A row of Preferences shows its current value and a chevron, and
   a tap on it opens the native picker of its select. A row that opens something ends with a
   chevron. Modules keeps its switches.
+- **SET-2** **Delete all data** is the last row of Backup, in the colour of danger, with no
+  chevron. It asks `reset.confirm`, or `reset.confirmLocal` with a session, which also says that
+  the session closes. A yes removes each `localStorage` key of the app, `<slug>.*` (`resetAll`),
+  and no key of another app of the origin, then loads the page again: the app starts as a new
+  install, with the walkthrough (ONB-1), and a device that had a session opens Sign in (ACC-1). It
+  has no Undo. When the removal fails, `error.resetFailed` shows and nothing else changes. The
+  caches of the worker stay.
 
 ## Walkthrough
 
