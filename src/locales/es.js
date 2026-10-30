@@ -144,4 +144,10 @@ export default {
   'error.dayMissing': 'El día ya no existe.',
   'error.itemMissing': 'El ejercicio ya no está en el día.',
   'error.repsRange': 'El máximo de repeticiones necesita un mínimo igual o menor.',
+  'error.workoutOpen': 'Ya hay un entrenamiento abierto: termínalo antes.',
+  'error.workoutMissing': 'El entrenamiento ya no existe.',
+  'error.entryMissing': 'El ejercicio ya no está en el entrenamiento.',
+  'error.setMissing': 'La serie ya no existe.',
+  'error.setIncomplete': 'Escribe los valores de la serie antes.',
+  'error.date': 'Fecha no válida.',
 };

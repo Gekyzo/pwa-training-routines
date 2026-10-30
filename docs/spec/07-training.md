@@ -57,4 +57,33 @@ The domain of the app: exercises, routines and workouts. Its pure modules are `s
   optionally reps, a top of a range of reps, a weight and a rest. A top needs reps at or below it
   (`error.repsRange`). Days and items move to an index, clamped to the ends. A routine, a day or an
   item that is not in the doc is `error.routineMissing`, `error.dayMissing` or `error.itemMissing`.
-  A deleted routine leaves its workouts as they are: they keep the names of their start.
+  A deleted routine leaves its workouts as they are: they keep the names of their start (WO-2).
+- **RT-2** **Start** of a day starts a workout from it (WO-2).
+- **RT-3** The day that a routine offers next is the day after the day of its newest workout, in
+  a cycle; with no workout, or when the day of each of its workouts is gone, its first day. It
+  does not depend on the calendar, so a missed day does not break the cycle.
+
+## Workouts
+
+- **WO-1** A workout starts on the local date of its start, open (not finished). One workout is
+  open at a time: a start while one is open is `error.workoutOpen`.
+- **WO-2** A workout from a day of a routine holds one exercise for each item, each with the sets
+  of its target, not done. It keeps the names of the routine and the day of its start.
+- **WO-3** **Add exercise** adds an exercise with one set.
+- **WO-4** A set holds the fields of the type of its exercise (EX-2) and a comment; an edit of
+  another field changes nothing. Each value is checked as TRN-4. A weight is in the unit of the
+  settings, and the set keeps that unit (PR-8).
+- **WO-5** A set is done only with the values of its type: reps for `weight_reps` and `reps`,
+  seconds for `time`, meters or seconds for `distance_time` (`error.setIncomplete`). Only done sets
+  count in the history and the records.
+- **WO-6** A workout takes a comment and another date, a past date too (`error.date`).
+- **WO-7** **Finish** drops the sets that are not done and the exercises left with no set. A
+  workout with no done set is deleted. A finished workout stays editable.
+- **WO-8** A new set copies the values, never the done mark or the comment: of the last set of its
+  exercise in this workout; else of the set of the same place in the newest other workout that
+  has done sets of the exercise (the last one when there are fewer); else it is blank. A planned
+  set of a day takes the weight and the reps of its item when the item has them.
+- **WO-9** A workout, an exercise of a workout or a set that is not in the doc is
+  `error.workoutMissing`, `error.entryMissing` or `error.setMissing`.
+- **WO-10** The history of an exercise lists each workout with done sets of
+  it, newest first, with those sets.

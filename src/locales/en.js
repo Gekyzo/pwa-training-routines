@@ -144,4 +144,10 @@ export default {
   'error.dayMissing': 'The day no longer exists.',
   'error.itemMissing': 'The exercise is no longer in the day.',
   'error.repsRange': 'A top of reps needs reps at or below it.',
+  'error.workoutOpen': 'A workout is open: finish it first.',
+  'error.workoutMissing': 'The workout no longer exists.',
+  'error.entryMissing': 'The exercise is no longer in the workout.',
+  'error.setMissing': 'The set no longer exists.',
+  'error.setIncomplete': 'Type the values of the set first.',
+  'error.date': 'Date not valid.',
 };
