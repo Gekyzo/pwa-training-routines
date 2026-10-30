@@ -4,6 +4,8 @@ User-visible changes, newest first.
 
 ## Unreleased
 
+- The routines replace the notes demo (07-training): `src/training.js` holds the doc `pwa-training-routines.training` (settings, categories, exercises, routines, workouts; no stored order), with `src/exercises.js`, `src/routines.js`, `src/workouts.js`, `src/bests.js`, `src/units.js`, `src/timer.js` and `src/csv.js` as pure modules. Three sections, Workout, Routines and Exercises (SCR-1 to SCR-6): a day of a routine starts a workout of planned sets, each new set copies the values of the last time (WO-8), a done set starts the rest timer (TMR-1), and Exercises shows the records (PR-1) and the history (WO-10) of each exercise. **Add common exercises** seeds 29 exercises with fixed ids (EX-4). Settings gains the weight unit, the default rest, **Export CSV** (DATA-2) and an export offer before **Delete all data** (DATA-6). The drag, swipe and motion modules go with the demo; the cache goes to `v2` (SW-10).
+- Sync with the account (09-sync): a signed-in, approved device sends each change to the `training_records` collection of `pwa-server` and pulls the changes of the other devices, with a queue that waits offline, the realtime stream and the retry series of pwa-shopping-list, with no shares (`src/records.js`, `src/sync.js`, `src/syncer.js`, the records API of `src/pocketbase.js`). The first login of a device merges; another user clears first; Log out sends the queue first (ACC-11 to ACC-13).
 - What's new shows the text between two `**` of a note in bold (VER-22): `textParts` of `src/onboarding.js` gives such a part `strong: true`, also for a key inside it, and `src/ui/whatsnew.js` wraps it in a `<strong>`. A `**` with no pair stays as text.
 
 ## 0.1.1 - 2026-10-30
