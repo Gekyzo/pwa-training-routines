@@ -4,13 +4,4 @@ Lo que cambia para ti en cada versión de la app. La versión más nueva va prim
 
 ## Unreleased
 
-- La app tiene su propio icono: una pesa rusa lima con un cronómetro.
-- **Borrar todos los datos** en Ajustes borra las notas y las preferencias de este dispositivo, y la app empieza como nueva.
-
-## 0.1.3 - 2026-10-25
-
-- Entras con tu cuenta de Google, o tocas **Usar sin conexión** para usar la app sin cuenta. El administrador aprueba cada cuenta nueva. Tus notas se quedan en este dispositivo.
-
-## 0.1.2 - 2026-10-24
-
-- `Ajustes` › `Ayuda` › `Novedades` muestra lo que cambia en cada versión. Tras una actualización, se abre sola una vez.
+- Primera versión de Routines, con su propio icono. Funciona sin conexión, se instala en Android y tiene temas claro y oscuro en inglés y español. Entra con Google, o úsala sin cuenta. **Borrar todos los datos** en Ajustes hace que la app empiece como nueva. Tus rutinas de entrenamiento llegan después.
