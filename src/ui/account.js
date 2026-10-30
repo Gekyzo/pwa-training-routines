@@ -1,10 +1,13 @@
 // The account screens (ACC-2): Sign in, with Google or offline, and Waiting for approval, over the
-// whole app; and the group Account of Settings (ACC-8). The notes stay on the device: nothing
-// syncs.
+// whole app; the group Account of Settings (ACC-8); and the sync of the doc with the account
+// (SYNC-1 to SYNC-13, ACC-11 to ACC-13).
 import { createClient, PocketBaseError } from '#pocketbase';
+import { createSyncer } from '#syncer';
+import { exportJson, exportFilename } from '#storage';
 import { loadSession, saveSession, dropSession, routeAtStart, savePending, takePending, loadOffline, saveOffline, dropOffline } from '#session';
 import { apiUrl } from '#config';
-import { $, storage, t, showToast } from '#ui/context';
+import { $, storage, state, lost, lang, t, showToast, adopt, setOnSave } from '#ui/context';
+import { download } from '#ui/controls';
 
 const SCREENS = ['login', 'waiting'];
 
@@ -18,7 +21,10 @@ const pendingStorage = (() => {
 })();
 
 // ACC-9: with no storage the app keeps no session, shows no account screen and works as before.
-const client = storage ? createClient({ url: apiUrl(location.hostname), fetch: window.fetch.bind(window) }) : null;
+const client = storage
+  ? createClient({ url: apiUrl(location.hostname), fetch: window.fetch.bind(window), EventSource: window.EventSource ?? null })
+  : null;
+
 
 // The screen in view, or null.
 let screen = null;
@@ -34,6 +40,48 @@ export const signedIn = () => sessionNow() !== null;
 
 const isOffline = () => offlineNow || loadOffline(storage);
 
+// The last status of the sync: the offline note, the time of the last sync and an auth stop.
+let sync = { online: true, pending: 0, lastSync: null, auth: false };
+
+// True between the question of a logout and its export offer (ACC-13).
+let leaving = false;
+
+// ACC-12, ACC-13: a copy of the doc before the device clears it, when the user wants one.
+const offerExport = (key) => async (doc) => {
+  if (window.confirm(t(key))) download(exportFilename(new Date()), exportJson(doc));
+};
+
+const syncer = client
+  ? createSyncer({
+      client,
+      storage,
+      getState: () => state,
+      setState: adopt,
+      lost,
+      onStatus: (status) => {
+        sync = status;
+        // ACC-11: an auth stop shows Sign in over the app.
+        if (status.auth && screen === null) show('login');
+        else renderAccount();
+      },
+      // The offer of a logout follows its question; the offer of a login of another user has none.
+      offerExport: async (doc) => {
+        await offerExport(leaving ? 'account.logoutExport' : 'account.exportAsk')(doc);
+        leaving = false;
+      },
+      confirmLogout: async (count) => {
+        leaving = window.confirm(t('account.logoutAsk', { count }));
+        return leaving;
+      },
+    })
+  : null;
+
+// SYNC-2: each save queues its changes.
+if (syncer) setOnSave((doc, options) => syncer.notify(doc, options));
+
+// SYNC-13: Delete all data stops the sync and forgets the account on this device.
+export const resetSync = () => syncer?.reset();
+
 export const renderAccount = () => {
   $('account-group').hidden = !client;
   const session = sessionNow();
@@ -41,6 +89,10 @@ export const renderAccount = () => {
   $('logout').hidden = !session;
   $('account-login').hidden = session !== null;
   $('account-email').textContent = session ? session.user.email || session.user.name : '';
+  const time = sync.lastSync ? new Intl.DateTimeFormat(lang, { dateStyle: 'short', timeStyle: 'short' }).format(new Date(sync.lastSync)) : null;
+  $('account-sync').textContent = time ? t('account.lastSync', { time }) : t('account.neverSynced');
+  // SYNC-11: the offline note, while a session is saved.
+  $('subtitle').textContent = session && !sync.online ? t('account.offlineNote') : '';
 };
 
 const show = (name) => {
@@ -92,13 +144,24 @@ const busy = async (name, task) => {
 
 const redirectUrl = () => `${location.origin}${location.pathname}`;
 
-const enter = (session) => {
-  saveSession(storage, session);
+// ACC-12: an approved session logs in to the sync, which merges or clears first.
+const enter = async (session) => {
+  if (session.user.approved === true && syncer) await syncer.login(session);
+  else saveSession(storage, session);
   showRoute(session);
 };
 
-// A device with the offline flag goes back to the app (the Log out of Waiting for approval).
-const logout = () => {
+// ACC-13: the queue goes first; changes still not sent need a yes. A device with the offline flag
+// goes back to the app.
+const logout = async () => {
+  if (syncer && (await syncer.logout({ online: navigator.onLine })) === 'kept') return;
+  dropSession(storage);
+  showError(null);
+  showRoute(null);
+};
+
+// ACC-6: an auth error of a refresh ends the session only; the doc and the queue stay (ACC-11).
+const dropAuth = () => {
   dropSession(storage);
   showError(null);
   showRoute(null);
@@ -140,7 +203,7 @@ const finishOAuth = async ({ code, state }) => {
   }
   await busy('login', async () => {
     try {
-      enter(await client.oauthFinish({ code, state }, pending, redirectUrl()));
+      await enter(await client.oauthFinish({ code, state }, pending, redirectUrl()));
     } catch (error) {
       showError(errorKey(error));
     }
@@ -154,14 +217,14 @@ const refresh = () => {
   if (!session) return Promise.resolve(null);
   refreshing ??= client
     .refresh(session.token)
-    .then((fresh) => {
+    .then(async (fresh) => {
       // A logout during the request: the answer saves nothing.
       if (sessionNow()?.token !== session.token) return null;
-      enter(fresh);
+      await enter(fresh);
       return fresh;
     })
     .catch((error) => {
-      if (error?.type === 'auth') logout();
+      if (error?.type === 'auth') dropAuth();
       else if (screen === 'waiting') showToast(t(errorKey(error)));
       return null;
     })
@@ -187,11 +250,13 @@ export const startAccount = (oauth) => {
   }
   const session = sessionNow();
   showRoute(session);
-  if (session && navigator.onLine) refresh();
+  // SYNC-3: a sync at the start; a session of before is refreshed first (ACC-6).
+  if (session && navigator.onLine) refresh().then(() => syncer.start());
+  else if (session) syncer.goOffline();
 };
 
 export const goOnline = () => {
-  if (client && screen !== 'login') refresh();
+  if (client && screen !== 'login') refresh().then(() => syncer.goOnline());
 };
 
 export const isAccountOpen = () => screen !== null;
@@ -209,4 +274,8 @@ export const bind = () => {
   $('logout').addEventListener('click', logout);
   $('login-offline').addEventListener('click', useOffline);
   $('account-login').addEventListener('click', openLogin);
+  window.addEventListener('offline', () => syncer.goOffline());
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && sessionNow()) syncer.goVisible(navigator.onLine);
+  });
 };

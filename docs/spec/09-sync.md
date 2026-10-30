@@ -111,14 +111,15 @@ and view rules. The migration lives in `pwa-server`; this app only reads and wri
 - **SYNC-10** The import replaces the data of the account, so on every device. The next sync sends
   a tombstone for each live record of the server that the import does not hold, also a record that
   the doc never held, and an upsert for the others. The import is the one save that can replace
-  the whole account with no regard to SYNC-2.
+  the whole account with no regard to SYNC-2. With a session the question of the import is
+  `import.confirmAccount`, which says so.
 - **SYNC-11** The status of the sync is offline after the `offline` event, or after a sync that
   stopped at the network or at a server error. It is online again after the `online` event or after
   a sync that the server answered (ok, a rate limit or an auth error), even when the browser sent no
   `online` event, as some phones do after airplane mode. A stop at the rate limit is not offline.
   When the app shows again (`visibilitychange` to visible) and the browser says it is online, this
-  counts as the `online` event. While the status is offline and a session is saved, a note says
-  `account.offlineNote`. The status also gives the number of changes not sent, the time of the last
+  counts as the `online` event. While the status is offline and a session is saved, the subtitle of
+  the header says `account.offlineNote`. The status also gives the number of changes not sent, the time of the last
   sync and whether the sync stopped at an auth error (ACC-11).
 - **SYNC-12** The first login of a device merges the device and the account: the base of the sync
   is the empty doc, so each local category, exercise, routine and workout, and settings that are not

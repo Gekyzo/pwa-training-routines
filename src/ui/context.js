@@ -69,6 +69,16 @@ export const textOf = ({ key, params }) => t(key, params);
 const firstStart = storage ? shouldShow({ seen: loadOnboarded(storage), hasState: hasStoredDoc(storage, TRAINING_KEY) }) : false;
 
 export const DOC = { key: TRAINING_KEY, normalize: normalizeTraining, empty: emptyTraining };
+
+// SYNC-2: true when a doc was stored but could not be read, so the app starts with the empty doc.
+export const lost = (() => {
+  try {
+    const raw = storage?.getItem(TRAINING_KEY) ?? null;
+    return raw !== null && normalizeTraining(JSON.parse(raw)) === null;
+  } catch {
+    return storage !== null;
+  }
+})();
 export let state = storage ? loadDoc(storage, DOC) : emptyTraining();
 
 export const ui = {
@@ -121,17 +131,17 @@ export const setRender = (fn) => {
 };
 export const render = () => renderer();
 
-// Told of each save, as `(previous, next)`, so that the sync queues its changes (SYNC-2).
+// Told of each save, as `(next, { explicit })`, so that the sync queues its changes (SYNC-2). An
+// explicit save, an import, may replace the whole account (SYNC-9).
 let onSave = () => {};
 export const setOnSave = (fn) => {
   onSave = fn;
 };
 
-export const commit = (next) => {
-  const previous = state;
+export const commit = (next, { explicit = false } = {}) => {
   state = next;
   const saved = storage !== null && saveDoc(storage, TRAINING_KEY, state);
-  onSave(previous, state);
+  onSave(state, { explicit });
   render();
   return saved;
 };
@@ -144,13 +154,13 @@ export const adopt = (next) => {
 };
 
 // Applies a pure operation. `undoText` makes the change reversible for a few seconds.
-export const apply = (result, { undoText = null } = {}) => {
+export const apply = (result, { undoText = null, explicit = false } = {}) => {
   if (result.error) {
     showToast(textOf(result.error));
     return false;
   }
   const previous = state;
-  const saved = commit(result.state);
+  const saved = commit(result.state, { explicit });
   if (!saved) showToast(t('error.notSaved'));
   else if (undoText) showToast(undoText, { undo: previous });
   else hideToast();

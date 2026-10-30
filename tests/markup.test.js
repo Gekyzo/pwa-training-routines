@@ -95,7 +95,7 @@ test('Settings has the Account group: the email and Log out, or Sign in with Goo
   const [group = ''] = body.match(/<div id="account-group" hidden>[\s\S]*?<\/div>\s*<\/div>/) ?? [];
   assert.match(group, /data-i18n="settings.account"/);
   assert.match(group, /<span id="account-email" class="settings-row-label"><\/span>/);
-  assert.match(group, /<div id="account-row" class="settings-row"><span id="account-email" class="settings-row-label"><\/span><\/div>/);
+  assert.match(group, /<div id="account-row" class="settings-row"><span id="account-email" class="settings-row-label"><\/span><span id="account-sync" class="settings-row-value"><\/span><\/div>/);
   assert.match(group, /<button id="logout" class="settings-row" type="button">/);
   assert.match(group, /<button id="account-login" class="settings-row" type="button"><span class="settings-row-label" data-i18n="account.signIn"><\/span>/);
 });

@@ -24,6 +24,13 @@ export const symbolNodes = async (name) => {
   return symbol ? [...symbol.childNodes].map((node) => node.cloneNode(true)) : [];
 };
 
+// Hands the text to the browser as a file to save.
+export const download = (filename, text, type = 'application/json') => {
+  const url = URL.createObjectURL(new Blob([text], { type }));
+  el('a', { href: url, download: filename }).click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+};
+
 // A button of a side menu: an icon, with the name of the action for a screen reader.
 export const iconButton = (name, label, onClick, { variant = '' } = {}) => {
   const button = el('button', { type: 'button', className: ['swipe-action', variant].join(' '), title: label, onclick: onClick }, [icon(name)]);

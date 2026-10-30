@@ -247,4 +247,5 @@ export default {
   'toast.routineDeleted': 'Routine deleted.',
   'toast.exerciseDeleted': 'Exercise deleted.',
   'error.noExercises': 'Add an exercise first.',
+  'import.confirmAccount': 'Replace the data with the backup ({workouts})? The data of your account is replaced too, on all your devices.',
 };

@@ -247,4 +247,5 @@ export default {
   'toast.routineDeleted': 'Rutina borrada.',
   'toast.exerciseDeleted': 'Ejercicio borrado.',
   'error.noExercises': 'Crea un ejercicio antes.',
+  'import.confirmAccount': '¿Sustituir los datos por la copia ({workouts})? También se sustituyen en tu cuenta, en todos tus dispositivos.',
 };

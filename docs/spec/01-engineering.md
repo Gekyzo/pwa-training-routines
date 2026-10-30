@@ -28,7 +28,7 @@
 | `src/particles.js` | The particles of a picture and their place in time (optional) | nothing |
 | `src/onboarding.js` | The show rule and the page steps of the walkthrough (optional) | nothing |
 | `src/ui/context.js` | The values that the views share, the toast, `render`, `commit` and `apply` | `i18n`, `onboarding`, `storage`, `training` |
-| `src/ui/controls.js` | The icon builder and the side-action button | `ui/context` |
+| `src/ui/controls.js` | The icon builder, the side-action button and the download of a file | `ui/context` |
 | `src/ui/update.js` | The version line, the check, the refresh and the update toast | `version`, `i18n`, `ui/context` |
 | `src/ui/install.js` | The Install button | `install`, `ui/context` |
 | `src/ui/nav.js` | The navigation, the change and the slide of a section | `modules`, `sections`, `ui/context`, `ui/dust`, `ui/update` |
@@ -38,11 +38,11 @@
 | `src/ui/timer.js` | The rest timer of the open workout (TMR-1 to TMR-3) | `storage`, `timer`, `ui/context`, `ui/format` |
 | `src/ui/routines.js` | The Routines section and the sheets of a routine (SCR-4) | `routines`, `training`, `ui/context`, `ui/controls`, `ui/format`, `ui/sheet`, `workouts` |
 | `src/ui/exercises.js` | The Exercises section, its detail with the records and the history, and the exercise sheet (SCR-5) | `bests`, `exercises`, `training`, `ui/context`, `ui/format`, `ui/sheet`, `workouts` |
-| `src/ui/settings.js` | Settings: Training, Backup, Delete all data (SET-2, DATA-6), and the text of the page in its language | `csv`, `i18n`, `modules`, `storage`, `training`, `ui/account`, `ui/context`, `ui/onboarding`, `ui/update`, `units` |
+| `src/ui/settings.js` | Settings: Training, Backup, Delete all data (SET-2, DATA-6), and the text of the page in its language | `csv`, `i18n`, `modules`, `storage`, `training`, `ui/account`, `ui/context`, `ui/controls`, `ui/onboarding`, `ui/update`, `units` |
 | `src/ui/dust.js` | The dust of a navigation item (optional) | `particles`, `ui/context`, `ui/controls` |
 | `src/ui/onboarding.js` | The walkthrough (optional) | `onboarding`, `sections`, `storage`, `ui/context`, `ui/controls` |
 | `src/ui/whatsnew.js` | The release notes sheet, its Settings row and the seen version | `whatsnew`, `onboarding`, `i18n`, `storage`, `ds/sheet`, `ui/context` |
-| `src/ui/account.js` | The account screens and the group Account of Settings (ACC-1 to ACC-10) | `pocketbase`, `session`, `config`, `ui/context` |
+| `src/ui/account.js` | The account screens, the group Account of Settings and the wiring of the sync (ACC-1 to ACC-13, SYNC-1 to SYNC-13) | `config`, `pocketbase`, `session`, `storage`, `syncer`, `ui/context`, `ui/controls` |
 | `src/app.js` | Wires the views, the global keys, the service worker and the update check | all of the above |
 
 ## Code rules

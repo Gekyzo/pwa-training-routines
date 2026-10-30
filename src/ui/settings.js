@@ -28,7 +28,8 @@ import {
 } from '#ui/context';
 import { runUpdate } from '#ui/update';
 import { renderOnboarding } from '#ui/onboarding';
-import { signedIn } from '#ui/account';
+import { signedIn, resetSync } from '#ui/account';
+import { download } from '#ui/controls';
 
 // The value of a row of Preferences is the text of the option that its select has.
 const renderValues = () => {
@@ -86,12 +87,6 @@ export const applyLanguage = () => {
   renderOnboarding();
 };
 
-const download = (filename, text, type = 'application/json') => {
-  const url = URL.createObjectURL(new Blob([text], { type }));
-  el('a', { href: url, download: filename }).click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-};
-
 export const bind = () => {
   $('export').addEventListener('click', () => {
     download(exportFilename(new Date()), exportJson(state));
@@ -110,6 +105,8 @@ export const bind = () => {
     // DATA-6: a copy first, when the user wants one.
     if (state.workouts.length && window.confirm(t('reset.exportFirst'))) download(exportFilename(new Date()), exportJson(state));
     if (!window.confirm(t(signedIn() ? 'reset.confirmLocal' : 'reset.confirm'))) return;
+    // SYNC-13: the sync stops first, and the account keeps its data.
+    resetSync();
     if (storage && !resetAll(storage)) {
       showToast(t('error.resetFailed'));
       return;
@@ -142,7 +139,8 @@ export const bind = () => {
       return;
     }
     const workouts = t('workout.count', { count: result.state.workouts.length });
-    if (!window.confirm(t('import.confirm', { workouts }))) return;
-    apply(result, { undoText: t('toast.imported') });
+    // SYNC-9: with a session the import replaces the data of the account too.
+    if (!window.confirm(t(signedIn() ? 'import.confirmAccount' : 'import.confirm', { workouts }))) return;
+    apply(result, { undoText: t('toast.imported'), explicit: true });
   });
 };
