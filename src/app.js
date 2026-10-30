@@ -1,10 +1,13 @@
 import { $, ui, storage, t, setRender, render, showToast, hideToast, toastAction, clickGuardUntil } from '#ui/context';
 import { bind as bindNav, renderNav } from '#ui/nav';
-import { bind as bindNotes, renderNotes, closeNoteSheet } from '#ui/notes';
-import { bind as bindSettings, applyLanguage } from '#ui/settings';
+import { bind as bindSheet, renderSheet, closeSheet } from '#ui/sheet';
+import { bind as bindWorkout, renderWorkout } from '#ui/workout';
+import { bind as bindTimer } from '#ui/timer';
+import { bind as bindRoutines, renderRoutines, openRoutineSheet } from '#ui/routines';
+import { bind as bindExercises, renderExercises, openExerciseSheet } from '#ui/exercises';
+import { bind as bindSettings, applyLanguage, renderSettings } from '#ui/settings';
 import { bind as bindInstall, renderInstall } from '#ui/install';
 import { readVersion, renderVersion, offerUpdate } from '#ui/update';
-import { bind as bindDrag, endReorder } from '#ui/drag';
 import { bind as bindOnboarding, closeOnboarding, turnOnboarding } from '#ui/onboarding';
 import { bind as bindWhatsNew, startWhatsNew, isWhatsNewOpen, closeWhatsNew } from '#ui/whatsnew';
 import { bind as bindAccount, renderAccount, startAccount, goOnline, isAccountOpen, closeAccount } from '#ui/account';
@@ -17,8 +20,14 @@ if (oauth) history.replaceState(history.state, '', clean);
 const renderAll = () => {
   renderNav();
   $('title').textContent = t(`nav.${ui.view}`);
-  renderNotes();
+  renderWorkout();
+  renderRoutines();
+  renderExercises();
+  renderSheet();
+  // The add button makes a routine or an exercise, in their sections.
+  $('fab').hidden = ui.sheetOpen || !['routines', 'exercises'].includes(ui.view);
   $('settings').hidden = ui.view !== 'settings';
+  if (ui.view === 'settings') renderSettings();
   renderVersion();
   renderInstall();
   renderAccount();
@@ -26,10 +35,13 @@ const renderAll = () => {
 setRender(renderAll);
 
 bindNav();
-bindNotes();
+bindSheet();
+bindWorkout();
+bindTimer();
+bindRoutines();
+bindExercises();
 bindSettings();
 bindInstall();
-bindDrag();
 bindOnboarding();
 bindWhatsNew();
 bindAccount();
@@ -61,13 +73,20 @@ document.addEventListener('keydown', (event) => {
     closeWhatsNew();
     return;
   }
-  endReorder(false);
-  if (ui.sheetOpen) closeNoteSheet();
-  else if (ui.noteId !== null) {
-    ui.noteId = null;
+  if (ui.sheetOpen) closeSheet();
+  else if (ui.view === 'routines' && ui.routineId !== null) {
+    ui.routineId = null;
+    render();
+  } else if (ui.view === 'exercises' && ui.exerciseId !== null) {
+    ui.exerciseId = null;
+    render();
+  } else if (ui.view === 'workout' && ui.workoutId !== null) {
+    ui.workoutId = null;
     render();
   }
 });
+
+$('fab').addEventListener('click', () => (ui.view === 'routines' ? openRoutineSheet() : openExerciseSheet()));
 
 $('toast-action').addEventListener('click', () => {
   const action = toastAction;

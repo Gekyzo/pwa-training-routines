@@ -148,7 +148,7 @@ test('a preference is not part of the stored doc', () => {
   saveLanguage(storage, 'en');
   saveHand(storage, 'left');
   saveTheme(storage, 'dark');
-  saveModules(storage, ['notes']);
+  saveModules(storage, ['routines']);
   saveOnboarded(storage);
   assert.deepEqual(loadDoc(storage, opts), empty());
   assert.equal(hasStoredDoc(storage, KEY), false);
@@ -213,7 +213,7 @@ test('the theme functions do not throw when the storage does', () => {
 });
 
 test('loadModules returns the stored ids that are modules', () => {
-  assert.deepEqual(loadModules(fakeStorage({ [MODULES_KEY]: '["notes"]' })), ['notes']);
+  assert.deepEqual(loadModules(fakeStorage({ [MODULES_KEY]: '["routines"]' })), ['routines']);
 });
 
 test('loadModules returns no module off for no value, bad JSON, a value that is not a list and unknown ids', () => {
@@ -226,15 +226,15 @@ test('loadModules returns no module off for no value, bad JSON, a value that is 
 
 test('saveModules stores the known ids and an empty list removes the key', () => {
   const storage = fakeStorage();
-  assert.equal(saveModules(storage, ['shops', 'notes']), true);
-  assert.equal(storage.getItem(MODULES_KEY), '["notes"]');
+  assert.equal(saveModules(storage, ['shops', 'routines']), true);
+  assert.equal(storage.getItem(MODULES_KEY), '["routines"]');
   assert.equal(saveModules(storage, []), true);
   assert.equal(storage.getItem(MODULES_KEY), null);
 });
 
 test('the module functions do not throw when the storage does', () => {
   assert.deepEqual(loadModules(brokenStorage()), []);
-  assert.equal(saveModules(brokenStorage(), ['notes']), false);
+  assert.equal(saveModules(brokenStorage(), ['routines']), false);
   assert.equal(saveModules(brokenStorage(), []), false);
 });
 
@@ -270,8 +270,8 @@ test('saveSeen stores the version, and is false for a storage that throws', () =
 
 test('resetAll removes every key of the app, the corrupt copies too, and keeps the keys of other apps (SET-2)', () => {
   const storage = fakeStorage({
-    [keyOf('notes')]: '{}',
-    [`${keyOf('notes')}.corrupt`]: 'x',
+    [keyOf('routines')]: '{}',
+    [`${keyOf('routines')}.corrupt`]: 'x',
     [keyOf('lang')]: 'es',
     [keyOf('session')]: '{}',
     [keyOf('offline')]: '1',

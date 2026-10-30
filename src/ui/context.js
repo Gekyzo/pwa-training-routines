@@ -1,4 +1,4 @@
-import { NOTES_KEY, emptyNotes, normalizeNotes } from '#notes';
+import { TRAINING_KEY, emptyTraining, normalizeTraining } from '#training';
 import {
   loadDoc,
   saveDoc,
@@ -22,15 +22,6 @@ import { shouldShow } from '#onboarding';
 export const UNDO_MS = 5000;
 export const MESSAGE_MS = 3000;
 export const CLICK_GUARD_MS = 350;
-// Width of one swipe-action of a row, the same as in styles.css.
-export const SIDE_BUTTON = 64;
-export const DRAG_START = 10;
-// The hold of a finger that lifts a row for a manual order.
-export const HOLD_MS = 400;
-// The distance from an edge of the list where a lifted row scrolls it, and the scroll of one frame.
-export const EDGE = 56;
-export const EDGE_STEP = 8;
-export const LEAVE_MS = 200;
 // The wait for the service worker to load the new deploy.
 export const REFRESH_MS = 15000;
 // The wait for the deployed version: a weak network can leave the request open.
@@ -75,23 +66,23 @@ export let navMotion = false;
 export const textOf = ({ key, params }) => t(key, params);
 
 // Read before the doc. A stored doc, valid or not, means that the install is not new.
-const firstStart = storage ? shouldShow({ seen: loadOnboarded(storage), hasState: hasStoredDoc(storage, NOTES_KEY) }) : false;
+const firstStart = storage ? shouldShow({ seen: loadOnboarded(storage), hasState: hasStoredDoc(storage, TRAINING_KEY) }) : false;
 
-const DOC = { key: NOTES_KEY, normalize: normalizeNotes, empty: emptyNotes };
-export let state = storage ? loadDoc(storage, DOC) : emptyNotes();
+export const DOC = { key: TRAINING_KEY, normalize: normalizeTraining, empty: emptyTraining };
+export let state = storage ? loadDoc(storage, DOC) : emptyTraining();
 
 export const ui = {
   // The section in view.
-  view: 'notes',
-  // The note whose detail is open, or null.
-  noteId: null,
+  view: 'workout',
+  // The past workout open in Workout, or null for the open workout or the start.
+  workoutId: null,
+  // The routine and the exercise whose detail is open, or null.
+  routineId: null,
+  exerciseId: null,
+  // True while the edit sheet is open.
   sheetOpen: false,
-  // The note that the sheet edits, or null for a new note.
-  editing: null,
-  // The note row whose side actions are open, or null.
-  openId: null,
-  // Where the last swipe left its row, so that the next render moves the row from there.
-  settleFrom: null,
+  // True while the archived exercises show.
+  showArchived: false,
   // The page of the walkthrough in view, or null while the walkthrough is closed.
   onboarding: firstStart ? 0 : null,
   // `running` is the version of the cached shell; `latest` is the deployed one.
@@ -130,11 +121,26 @@ export const setRender = (fn) => {
 };
 export const render = () => renderer();
 
+// Told of each save, as `(previous, next)`, so that the sync queues its changes (SYNC-2).
+let onSave = () => {};
+export const setOnSave = (fn) => {
+  onSave = fn;
+};
+
 export const commit = (next) => {
+  const previous = state;
   state = next;
-  const saved = storage !== null && saveDoc(storage, NOTES_KEY, state);
+  const saved = storage !== null && saveDoc(storage, TRAINING_KEY, state);
+  onSave(previous, state);
   render();
   return saved;
+};
+
+// Puts in place a doc that the sync merged: it saves and renders, and queues nothing.
+export const adopt = (next) => {
+  state = next;
+  if (storage) saveDoc(storage, TRAINING_KEY, state);
+  render();
 };
 
 // Applies a pure operation. `undoText` makes the change reversible for a few seconds.

@@ -1,4 +1,6 @@
-import { normalizeNotes } from '#notes';
+import { normalizeTraining, setUnit, setRest, UNITS } from '#training';
+import { toCsv, csvFilename } from '#csv';
+import { clock } from '#units';
 import { exportJson, exportFilename, importJson, resetAll } from '#storage';
 import { LANGUAGES, LANGUAGE_NAMES } from '#i18n';
 import { switchModule } from '#modules';
@@ -30,9 +32,21 @@ import { signedIn } from '#ui/account';
 
 // The value of a row of Preferences is the text of the option that its select has.
 const renderValues = () => {
-  for (const id of ['language', 'hand', 'theme']) {
+  for (const id of ['language', 'hand', 'theme', 'unit', 'rest']) {
     $(`${id}-value`).textContent = $(id).selectedOptions[0]?.textContent ?? '';
   }
+};
+
+// The rests that Settings offers: every 15 s up to 5 min, and the stored one.
+const RESTS = Array.from({ length: 20 }, (_, i) => (i + 1) * 15);
+
+// The rows of Training follow the doc, which a sync can change (TRN-6).
+export const renderSettings = () => {
+  const rests = [...new Set([...RESTS, state.settings.rest])].sort((a, b) => a - b);
+  const option = (value, text, selected) => el('option', { value, textContent: text, selected });
+  $('unit').replaceChildren(...UNITS.map((unit) => option(unit, t(`unit.${unit}`), unit === state.settings.unit)));
+  $('rest').replaceChildren(...rests.map((rest) => option(String(rest), clock(rest), rest === state.settings.rest)));
+  renderValues();
 };
 
 // Writes the fixed text of the page, then the text that a render builds.
@@ -72,8 +86,8 @@ export const applyLanguage = () => {
   renderOnboarding();
 };
 
-const download = (filename, text) => {
-  const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+const download = (filename, text, type = 'application/json') => {
+  const url = URL.createObjectURL(new Blob([text], { type }));
   el('a', { href: url, download: filename }).click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 };
@@ -82,11 +96,19 @@ export const bind = () => {
   $('export').addEventListener('click', () => {
     download(exportFilename(new Date()), exportJson(state));
   });
+  // DATA-2: the done sets, for a spreadsheet or another log.
+  $('export-csv').addEventListener('click', () => {
+    download(csvFilename(exportFilename(new Date())), toCsv(state, { unknown: t('exercise.unknown') }), 'text/csv');
+  });
+  $('unit').addEventListener('change', (event) => apply(setUnit(state, event.target.value)));
+  $('rest').addEventListener('change', (event) => apply(setRest(state, event.target.value)));
   $('import').addEventListener('click', () => $('import-file').click());
   // SET-2: the app starts again as a new install, with the walkthrough. With no storage the data is
   // only in memory, so the reload alone clears it. The session key goes too, so a signed-in device
   // opens Sign in.
   $('reset').addEventListener('click', () => {
+    // DATA-6: a copy first, when the user wants one.
+    if (state.workouts.length && window.confirm(t('reset.exportFirst'))) download(exportFilename(new Date()), exportJson(state));
     if (!window.confirm(t(signedIn() ? 'reset.confirmLocal' : 'reset.confirm'))) return;
     if (storage && !resetAll(storage)) {
       showToast(t('error.resetFailed'));
@@ -114,13 +136,13 @@ export const bind = () => {
     const [file] = event.target.files;
     event.target.value = '';
     if (!file) return;
-    const result = importJson(await file.text(), normalizeNotes);
+    const result = importJson(await file.text(), normalizeTraining);
     if (result.error) {
       showToast(textOf(result.error));
       return;
     }
-    const notes = t('notes.count', { count: result.state.notes.length });
-    if (!window.confirm(t('import.confirm', { notes }))) return;
+    const workouts = t('workout.count', { count: result.state.workouts.length });
+    if (!window.confirm(t('import.confirm', { workouts }))) return;
     apply(result, { undoText: t('toast.imported') });
   });
 };

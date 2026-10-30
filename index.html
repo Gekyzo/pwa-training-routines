@@ -26,22 +26,72 @@
     </div>
 
     <main>
-      <section id="notes" class="pane">
-        <div class="pane-list">
-          <ul id="note-list" class="item-list"></ul>
-          <div id="notes-empty" class="empty-state" hidden>
-            <p data-i18n="notes.empty"></p>
-            <button id="notes-add" class="button primary" type="button" data-i18n="notes.add"></button>
+      <section id="workout" class="workout">
+        <div id="workout-start">
+          <h2 id="workout-routines-head" class="list-group-head" data-i18n="workout.next"></h2>
+          <div id="workout-routines" class="list-group"></div>
+          <div class="cluster">
+            <button id="workout-empty" class="button tonal" type="button" data-i18n="workout.empty"></button>
+          </div>
+          <h2 id="workout-history-head" class="list-group-head" data-i18n="workout.history"></h2>
+          <ul id="workout-history" class="item-list"></ul>
+          <p id="workout-history-empty" class="empty-state inline" data-i18n="workout.noHistory"></p>
+        </div>
+        <div id="workout-open" hidden>
+          <div id="rest-timer" class="rest-timer" role="timer" hidden>
+            <svg class="icon" aria-hidden="true"><use href="icons.svg#timer"/></svg>
+            <span id="rest-timer-time" class="rest-timer-time"></span>
+            <div class="rest-timer-actions">
+              <button id="rest-less" class="button tonal" type="button" data-i18n="timer.less"></button>
+              <button id="rest-more" class="button tonal" type="button" data-i18n="timer.more"></button>
+              <button id="rest-skip" class="button accent" type="button" data-i18n="timer.skip"></button>
+            </div>
+          </div>
+          <div class="workout-head">
+            <button id="workout-back" class="button quiet" type="button" data-i18n="common.back"></button>
+            <h2 id="workout-title" class="workout-title"></h2>
+            <label class="field"><input id="workout-date" class="input field-input" type="date" required><span class="field-label" data-i18n="workout.date"></span></label>
+          </div>
+          <ul id="workout-entries" class="item-list"></ul>
+          <div class="cluster">
+            <button id="workout-add" class="button tonal" type="button" data-i18n="workout.addExercise"></button>
+          </div>
+          <label class="field"><textarea id="workout-comment" class="input field-input" maxlength="500" rows="2" data-i18n-attr="placeholder:workout.comment"></textarea><span class="field-label" data-i18n="workout.comment"></span></label>
+          <div class="split">
+            <button id="workout-finish" class="button primary hand-side" type="button" data-i18n="workout.finish"></button>
+            <button id="workout-delete" class="button outline danger" type="button" data-i18n="workout.delete"></button>
           </div>
         </div>
-        <article id="note-detail" class="pane-detail">
-          <button id="note-back" class="button quiet pane-back" type="button" data-i18n="notes.back"></button>
-          <p id="note-detail-empty" class="empty-state inline" data-i18n="notes.pick"></p>
-          <p id="note-detail-text"></p>
-          <div id="note-actions" class="cluster">
-            <button id="note-edit" class="button outline" type="button" data-i18n="notes.edit"></button>
-            <button id="note-delete" class="button danger" type="button"><svg class="icon" aria-hidden="true"><use href="icons.svg#trash"/></svg><span data-i18n="notes.delete"></span></button>
+      </section>
+
+      <section id="routines" class="pane" hidden>
+        <div class="pane-list">
+          <ul id="routine-list" class="item-list"></ul>
+          <div id="routines-empty" class="empty-state" hidden>
+            <p data-i18n="routines.empty"></p>
+            <button id="routines-add" class="button primary" type="button" data-i18n="routines.add"></button>
           </div>
+        </div>
+        <article id="routine-detail" class="pane-detail">
+          <button id="routine-back" class="button quiet pane-back" type="button" data-i18n="common.back"></button>
+          <p id="routine-pick" class="empty-state inline" data-i18n="routines.pick"></p>
+          <div id="routine-body"></div>
+        </article>
+      </section>
+
+      <section id="exercises" class="pane" hidden>
+        <div class="pane-list">
+          <ul id="exercise-list" class="item-list"></ul>
+          <div id="exercises-empty" class="empty-state" hidden>
+            <p data-i18n="exercises.empty"></p>
+            <button id="exercises-add" class="button primary" type="button" data-i18n="exercises.add"></button>
+            <button id="exercises-seed" class="button tonal" type="button" data-i18n="exercises.seed"></button>
+          </div>
+        </div>
+        <article id="exercise-detail" class="pane-detail">
+          <button id="exercise-back" class="button quiet pane-back" type="button" data-i18n="common.back"></button>
+          <p id="exercise-pick" class="empty-state inline" data-i18n="exercises.pick"></p>
+          <div id="exercise-body"></div>
         </article>
       </section>
 
@@ -54,9 +104,25 @@
             <button id="account-login" class="settings-row" type="button"><span class="settings-row-label" data-i18n="account.signIn"></span><span class="chevron" aria-hidden="true">›</span></button>
           </div>
         </div>
+        <h2 class="list-group-head" data-i18n="settings.training"></h2>
+        <div class="list-group">
+          <div class="settings-row">
+            <span class="settings-row-label" data-i18n="settings.unit"></span>
+            <span id="unit-value" class="settings-row-value"></span>
+            <span class="chevron" aria-hidden="true">›</span>
+            <select id="unit" class="select" data-i18n-attr="aria-label:settings.unit"></select>
+          </div>
+          <div class="settings-row">
+            <span class="settings-row-label" data-i18n="settings.rest"></span>
+            <span id="rest-value" class="settings-row-value"></span>
+            <span class="chevron" aria-hidden="true">›</span>
+            <select id="rest" class="select" data-i18n-attr="aria-label:settings.rest"></select>
+          </div>
+        </div>
         <h2 class="list-group-head" data-i18n="settings.backup"></h2>
         <div class="list-group">
           <button id="export" class="settings-row" type="button"><span class="settings-row-label" data-i18n="settings.export"></span><span class="chevron" aria-hidden="true">›</span></button>
+          <button id="export-csv" class="settings-row" type="button"><span class="settings-row-label" data-i18n="settings.exportCsv"></span><span class="chevron" aria-hidden="true">›</span></button>
           <button id="import" class="settings-row" type="button"><span class="settings-row-label" data-i18n="settings.import"></span><span class="chevron" aria-hidden="true">›</span></button>
           <button id="reset" class="settings-row danger" type="button"><span class="settings-row-label" data-i18n="settings.reset"></span></button>
         </div>
@@ -83,7 +149,7 @@
         </div>
         <h2 class="list-group-head" data-i18n="settings.modules"></h2>
         <div class="list-group">
-          <label class="switch"><span data-i18n="nav.notes"></span><input class="switch-input" type="checkbox" role="switch" data-module="notes"></label>
+          <label class="switch"><span data-i18n="nav.routines"></span><input class="switch-input" type="checkbox" role="switch" data-module="routines"></label>
         </div>
         <div id="install-group" hidden>
           <h2 class="list-group-head" data-i18n="settings.app"></h2>
@@ -103,12 +169,20 @@
       </section>
     </main>
 
-    <button id="fab" class="fab" type="button" data-i18n-attr="aria-label:notes.add">+</button>
+    <button id="fab" class="fab" type="button" data-i18n-attr="aria-label:common.add">+</button>
 
     <nav class="nav-bar" data-i18n-attr="aria-label:nav.label">
-      <button class="nav-item" type="button" data-view="notes">
-        <svg class="icon" aria-hidden="true"><use href="icons.svg#note"/></svg>
-        <span data-i18n="nav.notes"></span>
+      <button class="nav-item" type="button" data-view="workout">
+        <svg class="icon" aria-hidden="true"><use href="icons.svg#dumbbell"/></svg>
+        <span data-i18n="nav.workout"></span>
+      </button>
+      <button class="nav-item" type="button" data-view="routines">
+        <svg class="icon" aria-hidden="true"><use href="icons.svg#list"/></svg>
+        <span data-i18n="nav.routines"></span>
+      </button>
+      <button class="nav-item" type="button" data-view="exercises">
+        <svg class="icon" aria-hidden="true"><use href="icons.svg#book"/></svg>
+        <span data-i18n="nav.exercises"></span>
       </button>
       <button class="nav-item" type="button" data-view="settings">
         <svg class="icon" aria-hidden="true"><use href="icons.svg#settings"/></svg>
@@ -125,15 +199,13 @@
       </section>
     </div>
 
-    <div id="note-sheet" class="sheet-layer" hidden>
-      <div id="note-veil" class="sheet-veil"></div>
-      <form id="note-form" class="sheet" role="dialog" aria-modal="true" aria-labelledby="note-sheet-title" autocomplete="off">
+    <div id="edit-sheet" class="sheet-layer" hidden>
+      <div id="edit-veil" class="sheet-veil"></div>
+      <form id="edit-form" class="sheet" role="dialog" aria-modal="true" aria-labelledby="edit-title" autocomplete="off" novalidate>
         <div class="sheet-grab"></div>
-        <header class="sheet-head"><h2 id="note-sheet-title" class="sheet-title main"></h2><button id="note-close" class="button tonal" type="button" data-i18n="notes.close"></button></header>
-        <div class="sheet-body">
-          <label class="field"><textarea id="note-text" class="input field-input" maxlength="200" rows="3" required data-i18n-attr="placeholder:notes.text"></textarea><span class="field-label" data-i18n="notes.text"></span></label>
-        </div>
-        <footer class="sheet-foot"><button class="button primary wide" type="submit" data-i18n="notes.save"></button></footer>
+        <header class="sheet-head"><h2 id="edit-title" class="sheet-title main"></h2><button id="edit-close" class="button tonal" type="button" data-i18n="common.close"></button></header>
+        <div id="edit-body" class="sheet-body"></div>
+        <footer id="edit-foot" class="sheet-foot"><button id="edit-submit" class="button primary wide" type="submit" data-i18n="common.save"></button></footer>
       </form>
     </div>
 
@@ -192,6 +264,7 @@
           "#app": "./src/app.js",
           "#ds/sheet": "./vendor/design-system/sheet.js",
           "#config": "./src/config.js",
+          "#ui/format": "./src/ui/format.js",
           "#csv": "./src/csv.js",
           "#timer": "./src/timer.js",
           "#bests": "./src/bests.js",
@@ -202,7 +275,6 @@
           "#training": "./src/training.js",
           "#pocketbase": "./src/pocketbase.js",
           "#session": "./src/session.js",
-          "#notes": "./src/notes.js",
           "#install": "./src/install.js",
           "#sections": "./src/sections.js",
           "#modules": "./src/modules.js",
@@ -215,15 +287,15 @@
           "#ui/context": "./src/ui/context.js",
           "#ui/controls": "./src/ui/controls.js",
           "#ui/install": "./src/ui/install.js",
-          "#ui/motion": "./src/ui/motion.js",
           "#ui/nav": "./src/ui/nav.js",
-          "#ui/notes": "./src/ui/notes.js",
+          "#ui/sheet": "./src/ui/sheet.js",
+          "#ui/workout": "./src/ui/workout.js",
+          "#ui/timer": "./src/ui/timer.js",
+          "#ui/routines": "./src/ui/routines.js",
+          "#ui/exercises": "./src/ui/exercises.js",
           "#ui/settings": "./src/ui/settings.js",
-          "#swipe": "./src/swipe.js",
-          "#reorder": "./src/reorder.js",
           "#particles": "./src/particles.js",
           "#onboarding": "./src/onboarding.js",
-          "#ui/drag": "./src/ui/drag.js",
           "#ui/dust": "./src/ui/dust.js",
           "#ui/onboarding": "./src/ui/onboarding.js",
           "#ui/whatsnew": "./src/ui/whatsnew.js",

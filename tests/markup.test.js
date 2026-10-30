@@ -34,17 +34,19 @@ test('the markup has no text of its own', () => {
   assert.doesNotMatch(body, /\s(aria-label|placeholder|title)="/);
 });
 
-test('the note sheet has a veil, a dialog and a text field with the maximum length', () => {
-  const [layer = ''] = body.match(/<div id="note-sheet" class="sheet-layer"[\s\S]*?<\/form>\s*<\/div>/) ?? [];
-  assert.match(layer, /<div id="note-veil" class="sheet-veil">/);
-  assert.match(layer, /<form id="note-form" class="sheet" role="dialog"/);
-  assert.match(layer, /<textarea id="note-text"[^>]*maxlength="200"/);
+test('the edit sheet has a veil, a dialog, a head with its title and Close, a body, and Save in its foot', () => {
+  const [layer = ''] = body.match(/<div id="edit-sheet" class="sheet-layer"[\s\S]*?<\/form>\s*<\/div>/) ?? [];
+  assert.match(layer, /<div id="edit-veil" class="sheet-veil">/);
+  assert.match(layer, /<form id="edit-form" class="sheet" role="dialog"/);
+  assert.match(layer, /<header class="sheet-head"><h2 id="edit-title" class="sheet-title main"><\/h2><button id="edit-close" class="button tonal" type="button" data-i18n="common.close"><\/button><\/header>\s*<div id="edit-body" class="sheet-body"><\/div>/);
+  assert.match(layer, /<footer id="edit-foot" class="sheet-foot"><button id="edit-submit" class="button primary wide" type="submit" data-i18n="common.save"><\/button><\/footer>\s*<\/form>/);
 });
 
-test('the note sheet has a head with its title and Close, a body, and Save in its foot', () => {
-  const [layer = ''] = body.match(/<div id="note-sheet" class="sheet-layer"[\s\S]*?<\/form>\s*<\/div>/) ?? [];
-  assert.match(layer, /<header class="sheet-head"><h2 id="note-sheet-title" class="sheet-title main"><\/h2><button id="note-close" class="button tonal" type="button" data-i18n="notes.close"><\/button><\/header>\s*<div class="sheet-body">/);
-  assert.match(layer, /<footer class="sheet-foot"><button class="button primary wide" type="submit" data-i18n="notes.save"><\/button><\/footer>\s*<\/form>/);
+test('each section of the navigation has its section in the page (NAV-1)', () => {
+  for (const view of ['workout', 'routines', 'exercises', 'settings']) {
+    assert.match(body, new RegExp(`<button class="nav-item" type="button" data-view="${view}">`));
+    assert.match(body, new RegExp(`<section id="${view}" class="`));
+  }
 });
 
 test('the walkthrough has one drawing for each page, in the order of the pages', () => {

@@ -6,7 +6,7 @@ import { SECTIONS, direction, slideDirection, slideTo } from '#sections';
 const FIVE = ['a', 'b', 'c', 'd', 'settings'];
 
 test('SECTIONS has the order of the navigation', () => {
-  assert.deepEqual(SECTIONS, ['notes', 'settings']);
+  assert.deepEqual(SECTIONS, ['workout', 'routines', 'exercises', 'settings']);
 });
 
 test('slideDirection is 1 for a slide to the left and -1 for a slide to the right', () => {
@@ -28,9 +28,9 @@ test('slideDirection is 0 for a slide that is not horizontal', () => {
   assert.equal(slideDirection(80, -40), -1);
 });
 
-test('slideTo goes between the sections of the template', () => {
-  assert.equal(slideTo('notes', -80, 0), 'settings');
-  assert.equal(slideTo('settings', 80, 0), 'notes');
+test('slideTo goes between the sections of the app', () => {
+  assert.equal(slideTo('workout', -80, 0), 'routines');
+  assert.equal(slideTo('settings', 80, 0), 'exercises');
 });
 
 test('slideTo goes to the next section on a slide to the left', () => {
@@ -44,7 +44,7 @@ test('slideTo goes to the previous section on a slide to the right', () => {
 });
 
 test('slideTo stops at the first and at the last section', () => {
-  assert.equal(slideTo('notes', 200, 0), null);
+  assert.equal(slideTo('workout', 200, 0), null);
   assert.equal(slideTo('settings', -200, 0), null);
 });
 
@@ -60,15 +60,15 @@ test('slideTo ignores a view that is not a section', () => {
 });
 
 test('direction is 1 towards a later section and -1 towards an earlier one', () => {
-  assert.equal(direction('notes', 'settings'), 1);
-  assert.equal(direction('settings', 'notes'), -1);
+  assert.equal(direction('workout', 'settings'), 1);
+  assert.equal(direction('settings', 'workout'), -1);
   assert.equal(direction('a', 'd', FIVE), 1);
 });
 
 test('direction is 0 for the same section and for a view that is not a section', () => {
-  assert.equal(direction('notes', 'notes'), 0);
-  assert.equal(direction('other', 'notes'), 0);
-  assert.equal(direction('notes', 'other'), 0);
+  assert.equal(direction('workout', 'workout'), 0);
+  assert.equal(direction('other', 'workout'), 0);
+  assert.equal(direction('workout', 'other'), 0);
 });
 
 test('slideTo skips the sections that are not in the given list', () => {

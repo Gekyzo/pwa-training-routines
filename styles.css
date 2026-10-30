@@ -455,4 +455,117 @@
   .account-page > .button.accent {
     align-self: center;
   }
+
+  /* @component workout
+     @scope workout
+     @summary The Workout section: the start, or the open or past workout with its exercises and sets.
+     @part workout-head     The top of a workout: Back, its name and its date.
+     @part workout-title    The name of the workout: its routine and day.
+     @part workout-actions  The buttons below the sets of one exercise.
+     @example <section class="workout"><div class="workout-head"><h2 class="workout-title">Full body · A</h2></div><ul class="item-list"><li class="workout-actions"><button class="button tonal" type="button">Add set</button></li></ul></section> */
+  .workout {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    width: 100%;
+    max-width: var(--content-max);
+    margin-inline: auto;
+    padding: var(--space-3) var(--space-4) var(--space-7);
+    box-sizing: border-box;
+  }
+
+  .workout-head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .workout-head > .button.quiet {
+    align-self: flex-start;
+  }
+
+  .workout-title {
+    margin: 0;
+    font-size: var(--text-l);
+    font-weight: var(--weight-medium);
+  }
+
+  .workout-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    padding: var(--space-2) 0 var(--space-4);
+    list-style: none;
+  }
+
+  /* @component set-row
+     @scope workout
+     @summary One set of a workout as a row: the done check, its number and one box for each value of its type.
+     @part set-row-index  The number of the set, in muted text.
+     @part set-row-input  A box of one value, such as the weight or the reps.
+     @example <ul class="item-list" style="width: 100%"><li class="item-row"><div class="item-row-body set-row"><input class="item-row-check" type="checkbox" aria-label="Set 1 done"><span class="set-row-index">1</span><input class="input set-row-input" type="text" value="100" aria-label="Weight"><input class="input set-row-input" type="text" value="5" aria-label="Reps"></div></li></ul> */
+  .set-row {
+    gap: var(--space-2);
+  }
+
+  .set-row-index {
+    min-width: var(--space-4);
+    color: var(--muted);
+    font-size: var(--text-s);
+    text-align: center;
+  }
+
+  .set-row-input {
+    flex: 1 1 0;
+    min-width: 0;
+    text-align: center;
+  }
+
+  /* @component rest-timer
+     @scope workout
+     @summary The rest timer of the open workout: the time left and its buttons. It sticks to the top of the scroll area.
+     @part rest-timer-time     The time left, large.
+     @part rest-timer-actions  −15 s, +15 s and Skip.
+     @example <div class="rest-timer" role="timer"><svg class="icon" aria-hidden="true"><use href="icons.svg#timer"/></svg><span class="rest-timer-time">1:30</span><div class="rest-timer-actions"><button class="button tonal" type="button">−15 s</button><button class="button tonal" type="button">+15 s</button><button class="button accent" type="button">Skip</button></div></div> */
+  .rest-timer {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-l);
+    background: var(--surface-2);
+  }
+
+  .rest-timer-time {
+    font-size: var(--text-l);
+    font-weight: var(--weight-strong);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .rest-timer-actions {
+    display: flex;
+    gap: var(--space-2);
+    margin-inline-start: auto;
+  }
+
+  /* @component detail
+     @scope pane
+     @summary The head of the detail of a routine or an exercise: its name and a muted line about it.
+     @part detail-title  The name.
+     @part detail-meta   The line below the name.
+     @example <div><h2 class="detail-title">Squat</h2><p class="detail-meta">Legs · Weight and reps</p></div> */
+  .detail-title {
+    margin: 0;
+    font-size: var(--text-l);
+    font-weight: var(--weight-medium);
+  }
+
+  .detail-meta {
+    margin: var(--space-1) 0 var(--space-3);
+    color: var(--muted);
+  }
 }

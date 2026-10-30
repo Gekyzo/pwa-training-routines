@@ -14,7 +14,6 @@
 | `src/modules.js` | The modules that Settings turns off, and the visible sections | `sections` |
 | `src/storage.js` | Load, save, validation hook, export, import, device preferences | `config`, `modules` |
 | `src/install.js` | The install offer state machine | nothing |
-| `src/notes.js` | Pure note operations, the doc and its validation (demo) | `config` |
 | `src/training.js` | The doc of the app, its validation, its orders, the settings and the shared checks (TRN-1 to TRN-6) | `config` |
 | `src/exercises.js` | Categories and exercises, and the common exercises (EX-1 to EX-6) | `training` |
 | `src/routines.js` | Routines, their days and their items (RT-1) | `training` |
@@ -23,19 +22,20 @@
 | `src/bests.js` | The personal records of an exercise (PR-1) | `training`, `units` |
 | `src/timer.js` | The rest of a set and the rest timer (TMR-1 to TMR-3) | `training` |
 | `src/csv.js` | The CSV export of the done sets (DATA-2) | `training`, `units` |
-| `src/swipe.js` | The rule that settles the slide of a row (optional) | nothing |
-| `src/reorder.js` | The geometry of a row move (optional) | nothing |
 | `src/particles.js` | The particles of a picture and their place in time (optional) | nothing |
 | `src/onboarding.js` | The show rule and the page steps of the walkthrough (optional) | nothing |
-| `src/ui/context.js` | The values that the views share, the toast, `render`, `commit` and `apply` | `notes`, `storage`, `i18n`, `onboarding` |
+| `src/ui/context.js` | The values that the views share, the toast, `render`, `commit` and `apply` | `i18n`, `onboarding`, `storage`, `training` |
 | `src/ui/controls.js` | The icon builder and the side-action button | `ui/context` |
-| `src/ui/motion.js` | Row collapse, expand and slide animations | `ui/context` |
 | `src/ui/update.js` | The version line, the check, the refresh and the update toast | `version`, `i18n`, `ui/context` |
 | `src/ui/install.js` | The Install button | `install`, `ui/context` |
-| `src/ui/nav.js` | The navigation, the change and the slide of a section | `sections`, `modules`, `ui/context`, `ui/drag`, `ui/update`, `ui/dust` |
-| `src/ui/notes.js` | The Notes section, its rows and its sheet (demo) | `ds/sheet`, `notes`, `swipe`, `ui/context`, `ui/controls`, `ui/drag` |
-| `src/ui/settings.js` | Settings, Delete all data (SET-2), and the text of the page in its language | `notes`, `storage`, `i18n`, `modules`, `ui/context`, `ui/update`, `ui/onboarding`, `ui/account` |
-| `src/ui/drag.js` | The hold and move of a row (optional) | `notes`, `reorder`, `ui/context`, `ui/motion` |
+| `src/ui/nav.js` | The navigation, the change and the slide of a section | `modules`, `sections`, `ui/context`, `ui/dust`, `ui/update` |
+| `src/ui/sheet.js` | The edit sheet that each form of the app fills, and its fields | `ds/sheet`, `ui/context` |
+| `src/ui/format.js` | The text of weights, sets, targets, dates and rests (PR-8) | `training`, `ui/context`, `units` |
+| `src/ui/workout.js` | The Workout section: the start, the open or past workout and its sets (SCR-1 to SCR-3) | `timer`, `training`, `ui/context`, `ui/controls`, `ui/exercises`, `ui/format`, `ui/sheet`, `ui/timer`, `units`, `workouts` |
+| `src/ui/timer.js` | The rest timer of the open workout (TMR-1 to TMR-3) | `storage`, `timer`, `ui/context`, `ui/format` |
+| `src/ui/routines.js` | The Routines section and the sheets of a routine (SCR-4) | `routines`, `training`, `ui/context`, `ui/controls`, `ui/format`, `ui/sheet`, `workouts` |
+| `src/ui/exercises.js` | The Exercises section, its detail with the records and the history, and the exercise sheet (SCR-5) | `bests`, `exercises`, `training`, `ui/context`, `ui/format`, `ui/sheet`, `workouts` |
+| `src/ui/settings.js` | Settings: Training, Backup, Delete all data (SET-2, DATA-6), and the text of the page in its language | `csv`, `i18n`, `modules`, `storage`, `training`, `ui/account`, `ui/context`, `ui/onboarding`, `ui/update`, `units` |
 | `src/ui/dust.js` | The dust of a navigation item (optional) | `particles`, `ui/context`, `ui/controls` |
 | `src/ui/onboarding.js` | The walkthrough (optional) | `onboarding`, `sections`, `storage`, `ui/context`, `ui/controls` |
 | `src/ui/whatsnew.js` | The release notes sheet, its Settings row and the seen version | `whatsnew`, `onboarding`, `i18n`, `storage`, `ds/sheet`, `ui/context` |
@@ -53,7 +53,7 @@
   storage object), so that a test passes a fake.
 - **ENG-5** No module imports `src/app.js`. A view of `src/ui/` renders the screen through
   `render` of `src/ui/context.js`.
-- **ENG-6** A module of `src/` is imported by its alias, `from '#notes'`, never by a relative
+- **ENG-6** A module of `src/` is imported by its alias, `from '#training'`, never by a relative
   path. Node resolves `#name` through `imports` of `package.json`; the browser resolves it through
   the import map of `index.html`. `tests/aliases.test.js` checks that the two agree. An alias
   `#ds/<name>` names the module `vendor/design-system/<name>.js` (DSV-1).
@@ -73,7 +73,7 @@
 
 ## Storage keys
 
-The doc keys are in [07-notes.md](07-notes.md). The device preferences are `pwa-training-routines.lang`,
+The doc keys are in [07-training.md](07-training.md). The device preferences are `pwa-training-routines.lang`,
 `pwa-training-routines.hand`, `pwa-training-routines.theme`, `pwa-training-routines.modules` and `pwa-training-routines.onboarded`. The account keeps `pwa-training-routines.session` (ACC-5) and
 `pwa-training-routines.offline` (ACC-10), and `pwa-training-routines.oauth` in `sessionStorage` for the time of a Google redirect (ACC-4).
 
@@ -96,7 +96,6 @@ The doc keys are in [07-notes.md](07-notes.md). The device preferences are `pwa-
 
 | Test file | Covers |
 |---|---|
-| `tests/notes.test.js` | The note operations and the validation of the doc (demo) |
 | `tests/training.test.js` | The doc, its validation, its orders, the settings and the shared checks |
 | `tests/exercises.test.js` | Categories, exercises, the type lock, the delete rules and the common exercises |
 | `tests/routines.test.js` | Routines, days and items, their checks and their moves |
@@ -109,13 +108,11 @@ The doc keys are in [07-notes.md](07-notes.md). The device preferences are `pwa-
 | `tests/session.test.js` | The session, the start route, the offline flag, the pending sign-in and the return URL (ACC-1, ACC-4, ACC-5, ACC-10) |
 | `tests/storage.test.js` | Load, save, the corrupt copy, export, import and the device preferences |
 | `tests/install.test.js` | The install offer states (INS-1) |
-| `tests/swipe.test.js` | The settle rule of a row slide |
 | `tests/sw.test.js` | The manifest text that the worker puts in place (SW-13) |
 | `tests/sections.test.js` | The slide between sections |
 | `tests/modules.test.js` | The visible sections and the switch of a module |
 | `tests/particles.test.js` | The particles of a picture and their place in time |
 | `tests/onboarding.test.js` | The show rule and the page steps of the walkthrough |
-| `tests/reorder.test.js` | The geometry of a row move |
 | `tests/version.test.js` | Version rules and the update offer rule |
 | `tests/whatsnew.test.js` | The parse of the release notes and the unseen versions |
 | `tests/release-notes-files.test.js` | One release-notes file for each language, with the same versions (VER-19) |

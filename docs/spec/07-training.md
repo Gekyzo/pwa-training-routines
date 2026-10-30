@@ -116,3 +116,32 @@ The domain of the app: exercises, routines and workouts. Its pure modules are `s
   row for each done set, oldest first, with the columns `Date`, `Exercise`, `Category`, `Weight`,
   `Weight Unit`, `Reps`, `Distance`, `Distance Unit` (`m`), `Time` (`m:ss` or `h:mm:ss`) and
   `Comment`, quoted as RFC 4180. The file has the name of the JSON export with `.csv`.
+- **DATA-6** **Delete all data** first asks `reset.exportFirst` when the doc has a workout; a yes
+  writes the JSON export before the question of SET-2.
+
+## Screen
+
+- **SCR-1** Workout with no open workout shows **Next day**: one row for each routine whose next
+  day (RT-3) has an exercise, which starts it (WO-2); **Empty workout** (WO-1); and the finished
+  workouts, newest first, each with its date, its name and its count of exercises and done sets.
+  A tap on a finished workout opens it, with **Back**.
+- **SCR-2** A workout shows its name (the routine and the day, or **Free workout**), its date, then
+  each exercise with its sets: the done check, the number, and one box for each value of the type
+  (WO-4). A box saves when it loses the focus, and the focus stays in the box that the user moved
+  to. **Add set**, **Remove exercise**, **Add exercise** (a picker of the exercises that are not
+  archived, and **New exercise**), the comment, **Finish** (open workout only, WO-7) and **Delete
+  workout**, which asks `workout.deleteConfirm`. Marking a set done in the open workout starts the
+  rest timer (TMR-1), which stays at the top while the list scrolls.
+- **SCR-3** A weight box shows and takes the weight in the unit of the settings (PR-8).
+- **SCR-4** Routines lists the routines with their days. The detail has **Rename**, **Delete** and,
+  for each day, its items with their target, **Start** (RT-2, with one item at least), **Add
+  exercise**, **Rename day** and **Delete day**; then **Add day**. A tap on an item opens its
+  sheet; ↑ moves it up; the bin removes it. The weight of an item shows for `weight_reps` only.
+- **SCR-5** Exercises lists the exercises by category, by name, then **No category**; the archived
+  ones are behind a closed head with their count. The empty list offers **Add exercise** and **Add
+  common exercises** (EX-4). The detail shows the category, the type and the rest, **Edit**,
+  **Archive** or **Restore**, and **Delete** when EX-6 allows it, then the records (PR-1) and the
+  history (WO-10); a tap on a workout of the history opens it in Workout. The sheet of an exercise
+  has the name, the category or a new one, the type and the rest.
+- **SCR-6** **+** makes a routine in Routines and an exercise in Exercises. `Escape` closes the
+  sheet, else the open detail, else the past workout.
