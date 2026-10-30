@@ -27,3 +27,24 @@ The domain of the app: exercises, routines and workouts. Its pure modules are `s
 - **TRN-5** A reference to an exercise, a category or a routine that the doc does not hold is
   valid: a sync can bring a workout before its exercise. The screen names it `exercise.unknown`.
 - **TRN-6** `setUnit` takes `kg` or `lb` (else `error.unit`); `setRest` takes a rest of TRN-4.
+
+## Exercises
+
+- **EX-1** An exercise has a name, a category or none, a type, a rest or none, and an archive
+  flag. Its name is unique with no regard to case (`error.exerciseTaken`). An id that is not in the
+  doc is `error.exerciseMissing`.
+- **EX-2** The type is `weight_reps` (weight and reps), `reps`, `time` (seconds) or
+  `distance_time` (meters and seconds); it fixes the fields of each set. Another type is
+  `error.exerciseType`. The type of an exercise that a workout holds does not change
+  (`error.typeLocked`).
+- **EX-3** A category has a name, unique with no regard to case (`error.categoryTaken`). A
+  category that an exercise uses is not deleted (`error.categoryInUse`). An id that is not in the
+  doc is `error.categoryMissing`.
+- **EX-4** **Add common exercises** adds 7 categories and 29 exercises with fixed ids
+  (`seed-cat-<slug>`, `seed-<slug>`), named in the language of the screen. A seed whose id is in
+  the doc, or whose name the doc has, is skipped: a second run, or a run on a second device, adds
+  nothing twice.
+- **EX-5** An exercise with no rest of its own rests the default of the settings (TRN-1).
+- **EX-6** An exercise that a workout holds is not deleted (`error.exerciseInUse`): it is archived,
+  and an archived exercise keeps its history and leaves the pickers. An exercise that a routine
+  holds is not deleted (`error.exerciseInRoutine`).
