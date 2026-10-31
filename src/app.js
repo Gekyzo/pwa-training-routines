@@ -99,7 +99,6 @@ if (ui.onboarding !== null) $('onboarding-next').focus();
 startAccount(oauth);
 window.addEventListener('online', goOnline);
 if (!storage) showToast(t('error.noStorage'));
-navigator.storage?.persist?.().catch(() => {});
 navigator.serviceWorker?.register('./sw.js').catch(() => {});
 // Read once at the start: the worker answers from the cache, then stores the file of the next deploy.
 readVersion('./version.json').then((running) => {

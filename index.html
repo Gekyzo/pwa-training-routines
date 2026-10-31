@@ -28,6 +28,8 @@
     <main>
       <section id="workout" class="workout">
         <div id="workout-start">
+          <h2 id="workout-today-head" class="list-group-head" data-i18n="workout.today"></h2>
+          <div id="workout-today" class="list-group"></div>
           <h2 id="workout-routines-head" class="list-group-head" data-i18n="workout.next"></h2>
           <div id="workout-routines" class="list-group"></div>
           <div class="cluster">
@@ -50,6 +52,7 @@
           <div class="workout-head">
             <button id="workout-back" class="button quiet" type="button" data-i18n="common.back"></button>
             <h2 id="workout-title" class="workout-title"></h2>
+            <p id="workout-duration" class="workout-meta" hidden></p>
             <label class="field"><input id="workout-date" class="input field-input" type="date" required><span class="field-label" data-i18n="workout.date"></span></label>
           </div>
           <ul id="workout-entries" class="item-list"></ul>
@@ -57,6 +60,10 @@
             <button id="workout-add" class="button tonal" type="button" data-i18n="workout.addExercise"></button>
           </div>
           <label class="field"><textarea id="workout-comment" class="input field-input" maxlength="500" rows="2" data-i18n-attr="placeholder:workout.comment"></textarea><span class="field-label" data-i18n="workout.comment"></span></label>
+          <div class="cluster">
+            <button id="workout-repeat" class="button tonal" type="button" data-i18n="workout.repeat"></button>
+            <button id="workout-share" class="button tonal" type="button" data-i18n="workout.share"></button>
+          </div>
           <div class="split">
             <button id="workout-finish" class="button primary hand-side" type="button" data-i18n="workout.finish"></button>
             <button id="workout-delete" class="button outline danger" type="button" data-i18n="workout.delete"></button>

@@ -462,7 +462,12 @@
      @part workout-head     The top of a workout: Back, its name and its date.
      @part workout-title    The name of the workout: its routine and day.
      @part workout-actions  The buttons below the sets of one exercise.
-     @example <section class="workout"><div class="workout-head"><h2 class="workout-title">Full body · A</h2></div><ul class="item-list"><li class="workout-actions"><button class="button tonal" type="button">Add set</button></li></ul></section> */
+     @part workout-meta     A muted line below the name, such as the duration.
+     @part workout-entry-name  The name of an exercise in its head.
+     @part workout-entry-end   The end of the head of an exercise: its marks, its count and its menu.
+     @part workout-note     The muted lines below the head of an exercise: the target, the exercise it replaces and its notes.
+     @part plates-result    The plates of a side, or the nearest loads, in the plates sheet.
+     @example <section class="workout"><div class="workout-head"><h2 class="workout-title">Full body · A</h2><p class="workout-meta">Duration 52:10</p></div><ul class="item-list"><li class="group-head"><span class="workout-entry-name">Squat</span><span class="workout-entry-end"><span class="pill ghost">Superset A</span><span>1/3</span></span></li><li class="workout-note"><span>Target 3 × 5 · 100 kg</span><span>Knees out.</span></li><li class="workout-actions"><button class="button tonal" type="button">Add set</button></li></ul><div class="plates-result"><span>Each side: 20 kg + 10 kg</span></div></section> */
   .workout {
     display: flex;
     flex-direction: column;
@@ -490,6 +495,45 @@
     font-weight: var(--weight-medium);
   }
 
+  .workout-meta {
+    margin: 0;
+    color: var(--muted);
+    font-size: var(--text-s);
+  }
+
+  .workout-entry-name {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .workout-entry-end {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--muted);
+  }
+
+  .workout-note {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    margin: 0;
+    padding: var(--space-2) var(--space-4);
+    color: var(--muted);
+    font-size: var(--text-s);
+    list-style: none;
+    white-space: pre-line;
+  }
+
+  .plates-result {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding-top: var(--space-3);
+    font-size: var(--text-m);
+  }
+
   .workout-actions {
     display: flex;
     flex-wrap: wrap;
@@ -501,18 +545,39 @@
   /* @component set-row
      @scope workout
      @summary One set of a workout as a row: the done check, its number and one box for each value of its type.
-     @part set-row-index  The number of the set, in muted text.
+     @part set-row-kind   The number of a working set, else the letter of its kind; a tap gives the next kind.
      @part set-row-input  A box of one value, such as the weight or the reps.
-     @example <ul class="item-list" style="width: 100%"><li class="item-row"><div class="item-row-body set-row"><input class="item-row-check" type="checkbox" aria-label="Set 1 done"><span class="set-row-index">1</span><input class="input set-row-input" type="text" value="100" aria-label="Weight"><input class="input set-row-input" type="text" value="5" aria-label="Reps"></div></li></ul> */
+     @part set-row-watch  The stopwatch of the set while it runs: its time in place of the icon.
+     @part set-row-marks  The marks below a set: its records and the AMRAP set of a plan.
+     @example <ul class="item-list" style="width: 100%"><li class="item-row"><div class="item-row-body set-row"><input class="item-row-check" type="checkbox" aria-label="Set 1 done"><button class="button quiet set-row-kind" type="button" aria-label="Kind of set 1: Working">1</button><input class="input set-row-input" type="text" value="100" aria-label="Weight"><input class="input set-row-input" type="text" value="5" aria-label="Reps"></div><div class="set-row-marks"><span class="pill">Heaviest</span></div></li><li class="item-row"><div class="item-row-body set-row"><input class="item-row-check" type="checkbox" aria-label="Set 2 done"><button class="button quiet set-row-kind" type="button" aria-label="Kind of set 2: Warm-up">W</button><input class="input set-row-input" type="text" value="60" aria-label="Seconds"><div class="item-row-end"><button class="button icon accent set-row-watch" type="button" aria-label="Stopwatch of set 2">0:42</button></div></div></li></ul> */
   .set-row {
     gap: var(--space-2);
   }
 
-  .set-row-index {
-    min-width: var(--space-4);
-    color: var(--muted);
+  /* The end of a set row takes only its buttons, so the boxes keep their room on a phone. */
+  .set-row > .item-row-end {
+    width: auto;
+  }
+
+  .set-row-kind {
+    flex: none;
+    min-width: var(--tap);
+    padding: 0;
     font-size: var(--text-s);
-    text-align: center;
+  }
+
+  .set-row-watch {
+    width: auto;
+    min-width: var(--tap);
+    font-size: var(--text-s);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .set-row-marks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    padding: 0 var(--space-4) var(--space-2);
   }
 
   .set-row-input {

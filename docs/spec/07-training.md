@@ -272,6 +272,9 @@ The domain of the app: exercises, routines and workouts. Its pure modules are `s
   export yet, 10 finished workouts are enough. Never with no finished workout.
 - **DATA-6** **Delete all data** first asks `reset.exportFirst` when the doc has a workout; a yes
   writes the JSON export before the question of SET-2.
+- **DATA-7** A start of a workout asks the browser to keep the data
+  (`navigator.storage.persist()`) while the data is not kept yet, so the first start asks. A browser
+  with no such call is not asked. Nothing waits for the answer.
 
 ## Integrations
 
@@ -283,17 +286,21 @@ The domain of the app: exercises, routines and workouts. Its pure modules are `s
 
 ## Screen
 
-- **SCR-1** Workout with no open workout shows **Next day**: one row for each routine whose next
-  day (RT-3) has an exercise, which starts it (WO-2); **Empty workout** (WO-1); and the finished
-  workouts, newest first, each with its date, its name and its count of exercises and done sets.
-  A tap on a finished workout opens it, with **Back**.
-- **SCR-2** A workout shows its name (the routine and the day, or **Free workout**), its date, then
-  each exercise with its sets: the done check, the number, and one box for each value of the type
-  (WO-4). A box saves when it loses the focus, and the focus stays in the box that the user moved
-  to. **Add set**, **Remove exercise**, **Add exercise** (a picker of the exercises that are not
-  archived, and **New exercise**), the comment, **Finish** (open workout only, WO-7) and **Delete
-  workout**, which asks `workout.deleteConfirm`. Marking a set done in the open workout starts the
-  rest timer (TMR-1), which stays at the top while the list scrolls.
+- **SCR-1** Workout with no open workout shows **Today**: one row for each day of today's weekday
+  (RT-7) that has an exercise; then **Next day**: one row for each routine that is not archived
+  whose next day (RT-3) has an exercise. A row starts its day (WO-2). Then **Empty workout** (WO-1),
+  and the finished workouts, newest first, each with its date, its name, its count of exercises
+  and done sets, and its duration (WO-14). A tap on a finished workout opens it, with **Back**. A
+  group with no row is hidden.
+- **SCR-2** A workout shows its name (the routine and the day, or **Free workout**), its duration
+  (WO-14), its date, then each exercise with its sets: the done check, the kind (SCR-8), and one
+  box for each value of the type (WO-4). A box saves when it loses the focus, and the focus stays
+  in the box that the user moved to. **Add set** (not on a skipped exercise), **Add exercise** (a
+  picker of the exercises that are not archived, and **New exercise**), the comment, **Repeat**
+  (finished workout only, SCR-11), **Share** (INT-1), **Finish** (open workout only, WO-7) and
+  **Delete workout**, which asks `workout.deleteConfirm`. Marking a set done in the open workout
+  starts the rest timer (TMR-1) at the end of a round (WO-15), and the timer stays at the top while
+  the list scrolls.
 - **SCR-3** A weight box shows and takes the weight in the unit of the settings (PR-8).
 - **SCR-4** Routines lists the routines with their days. The detail has **Rename**, **Delete** and,
   for each day, its items with their target, **Start** (RT-2, with one item at least), **Add
@@ -307,3 +314,25 @@ The domain of the app: exercises, routines and workouts. Its pure modules are `s
   has the name, the category or a new one, the type and the rest.
 - **SCR-6** **+** makes a routine in Routines and an exercise in Exercises. `Escape` closes the
   sheet, else the open detail, else the past workout.
+- **SCR-7** At each render of Workout, an open workout whose last done set is over 4 hours old
+  finishes (WO-14) and a toast says so. A start of a workout asks for the persistent storage (DATA-7).
+- **SCR-8** The kind of a set shows as its number among the sets that are not warm-ups for
+  `working`, else as a letter (`W`, `D`, `F`);
+  a tap gives the next kind (WO-11). With an effort scale (WO-12) each set has an effort box. A
+  done set that holds a record shows a mark with the name of the record (PR-4). In an open
+  workout from a day, the AMRAP set of a percent rule (PRG-5) has a mark, and each exercise shows
+  its target (WO-18). A set of a type with seconds has the stopwatch (TMR-4).
+- **SCR-9** The head of an exercise shows its name, the mark of its superset (`Superset A`) or of a
+  skip, and its count of done sets; below it the target, the exercise that it replaces and the
+  notes of the exercise (EX-8). Its menu holds the secondary actions: **Superset with…** (a picker
+  of the other exercises, WO-15), **Leave the superset**, **Skip exercise** or **Do the exercise**
+  (WO-17), **Substitute with…** (a picker of the exercises that are not archived, of any type),
+  **Add warm-up sets** (WO-19) and **Plates** for a `barbell` exercise, and **Remove exercise**. In
+  a superset, a done set moves the view to the next exercise of the round.
+- **SCR-10** **Plates** opens a sheet with a load box, filled with the weight of the first working
+  set not done. It shows the plates of a side (PR-6), the bar alone, or the nearest loads under and
+  over the load. The bar is the bar of the exercise, else of the settings.
+- **SCR-11** **Repeat** opens a sheet with the date (today) and **Copy the values** (on); **Start**
+  starts the workout (WO-16). **Share** gives the text of INT-1 to the share sheet of the phone, else
+  copies it and says so. After a finish, the toast of DATA-5 has **Export**, which writes the JSON
+  export and the device key.

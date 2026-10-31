@@ -43,7 +43,7 @@
 | `src/ui/nav.js` | The navigation, the change and the slide of a section | `modules`, `sections`, `ui/context`, `ui/dust`, `ui/update` |
 | `src/ui/sheet.js` | The edit sheet that each form of the app fills, and its fields | `ds/sheet`, `ui/context` |
 | `src/ui/format.js` | The text of weights, sets, targets, dates and rests (PR-8) | `training`, `ui/context`, `units` |
-| `src/ui/workout.js` | The Workout section: the start, the open or past workout and its sets (SCR-1 to SCR-3) | `timer`, `training`, `ui/context`, `ui/controls`, `ui/exercises`, `ui/format`, `ui/sheet`, `ui/timer`, `units`, `workouts` |
+| `src/ui/workout.js` | The Workout section: the start, the open or past workout, its sets, its menus and the stopwatch (SCR-1 to SCR-3, SCR-7 to SCR-11) | `backup`, `bests`, `plates`, `progression`, `routines`, `stopwatch`, `storage`, `timer`, `training`, `ui/context`, `ui/controls`, `ui/exercises`, `ui/format`, `ui/sheet`, `ui/timer`, `units`, `workouts` |
 | `src/ui/timer.js` | The rest timer of the open workout (TMR-1 to TMR-3) | `storage`, `timer`, `ui/context`, `ui/format` |
 | `src/ui/routines.js` | The Routines section and the sheets of a routine (SCR-4) | `routines`, `training`, `ui/context`, `ui/controls`, `ui/format`, `ui/sheet`, `workouts` |
 | `src/ui/exercises.js` | The Exercises section, its detail with the records and the history, and the exercise sheet (SCR-5) | `bests`, `exercises`, `training`, `ui/context`, `ui/format`, `ui/sheet`, `workouts` |

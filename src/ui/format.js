@@ -23,11 +23,12 @@ export const setText = (set, type) => {
   return set.weight === null ? t('set.reps', { reps }) : `${weightText(set.weight, set.unit)} × ${reps}`;
 };
 
-// The target of an item of a day: `3 × 8–12 · 60 kg · 1:30`.
+// The target of an item of a day, or of an exercise of a workout (WO-18): `3 × 8–12 · 60 kg · 1:30`.
+// An item has the unit of the settings; a target keeps its own.
 export const targetText = (item) => {
   const reps = item.reps === null ? '' : item.repsMax === null ? ` × ${item.reps}` : ` × ${item.reps}–${item.repsMax}`;
   const parts = [`${item.sets}${reps}`];
-  if (item.weight !== null) parts.push(weightText(item.weight, state.settings.unit));
+  if (item.weight !== null) parts.push(weightText(item.weight, item.unit ?? state.settings.unit));
   if (item.rest !== null) parts.push(clock(item.rest));
   return parts.join(' · ');
 };
