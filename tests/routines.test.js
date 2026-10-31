@@ -199,3 +199,11 @@ test('a template name clash takes the suffix, and a user exercise with the seed 
 test('an unknown template is refused', () => {
   assert.equal(addTemplate(base(), 'nope', texts, NOW).error.key, 'error.templateMissing');
 });
+
+test('duplicate and template work with the default ids', () => {
+  const { state } = duplicateRoutine(sample(), 'r1', NOW);
+  assert.equal(new Set([state.routines[1].id, state.routines[1].days[0].id, state.routines[1].days[0].items[0].id]).size, 3);
+  assert.deepEqual(state.routines[1].days[0].weekdays, [0, 2]);
+  const t = addTemplate(emptyTraining(), 'full-body', texts, NOW).state;
+  assert.equal(t.routines.length, 1);
+});

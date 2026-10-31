@@ -110,7 +110,7 @@ The domain of the app: exercises, routines and workouts. Its pure modules are `s
   a cycle; with no workout, or when the day of each of its workouts is gone, its first day. It
   does not depend on the calendar, so a missed day does not break the cycle.
 - **RT-5** **Duplicate** copies a routine with new ids for it, its days and its items. The copy is
-  not archived, has the time of the copy as `created`, and the name `<name> (2)`, `(3)` and so on:
+  not archived, keeps the weekdays of the days, has the time of the copy as `created`, and the name `<name> (2)`, `(3)` and so on:
   the first that no routine has, with no regard to case, within 60 characters. **Archive** hides a
   routine from Next day and Today; **Restore** shows it again. Its workouts stay.
 - **RT-7** A day has weekdays: unique whole numbers from 0 (Monday) to 6 (Sunday), kept sorted

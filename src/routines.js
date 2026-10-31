@@ -159,7 +159,7 @@ const freeName = (state, base) => {
 };
 
 // RT-5: a copy with new ids for the routine, its days and its items; the workouts stay with the original.
-export const duplicateRoutine = (state, routineId, now, id = crypto.randomUUID(), newId = crypto.randomUUID) => {
+export const duplicateRoutine = (state, routineId, now, id = crypto.randomUUID(), newId = () => crypto.randomUUID()) => {
   const source = findById(state.routines, routineId);
   if (!source) return routineMissing(state);
   const copy = {
@@ -235,7 +235,7 @@ export const TEMPLATES = [
 
 // RT-8: adds the routine of a template, with the seed exercises that the doc lacks (EX-4). `texts(key)`
 // gives `template.<id>.name`, `template.<id>.day.<n>` and the seed names, as `seedExercises` takes.
-export const addTemplate = (state, templateId, texts, now, newId = crypto.randomUUID) => {
+export const addTemplate = (state, templateId, texts, now, newId = () => crypto.randomUUID()) => {
   const template = TEMPLATES.find((t) => t.id === templateId);
   if (!template) return { state, error: { key: 'error.templateMissing' } };
   const { state: seeded } = seedExercises(state, texts);
