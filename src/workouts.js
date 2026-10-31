@@ -2,7 +2,7 @@ import { FIELDS, SET_KINDS, checkNumber, checkComment, findById, localDate, sort
 import { nextTarget } from '#progression';
 
 // Workouts: the start, the sets, the finish, the next day of a routine and the history of an
-// exercise (WO-1 to WO-18).
+// exercise (WO-1 to WO-19).
 
 const uuid = () => crypto.randomUUID();
 const workoutMissing = (state) => ({ state, error: { key: 'error.workoutMissing' } });
@@ -280,6 +280,20 @@ export const exerciseHistory = (state, exerciseId) =>
       sets: workout.entries.filter((e) => e.exerciseId === exerciseId).flatMap((e) => e.sets.filter((s) => s.done)),
     }))
     .filter(({ sets }) => sets.length);
+
+// WO-19: the warm-up sets `[{ weight, reps }]` (PR-7), in the unit of the settings, go before the
+// first working set of the entry, else at its end. They are not done.
+export const addWarmups = (state, workoutId, entryId, sets, newId = uuid) => {
+  const { error } = locate(state, workoutId, entryId);
+  if (error) return error;
+  if (!sets.length) return { state };
+  const added = sets.map(({ weight, reps }) => ({ ...blankSet(newId(), state.settings.unit, 'warmup'), weight, reps }));
+  return withSets(state, workoutId, entryId, (list) => {
+    const index = list.findIndex((s) => s.kind === 'working');
+    const at = index === -1 ? list.length : index;
+    return [...list.slice(0, at), ...added, ...list.slice(at)];
+  });
+};
 
 // ---- Supersets (WO-15) ----
 

@@ -181,6 +181,9 @@ The domain of the app: exercises, routines and workouts. Its pure modules are `s
 - **WO-18** A workout from a day keeps, for each exercise, the item and a copy of its next target
   (PRG-1): sets, reps, top of reps, weight, rest, and the unit of the settings or of a percent rule. A later change of the routine
   changes no workout.
+- **WO-19** **Add warm-up sets** puts the warm-up of PR-7 before the first `working` set of an
+  exercise, else at its end: sets of the kind `warmup`, not done, in the unit of the settings.
+  No warm-up changes nothing.
 
 ## Records and units
 
@@ -230,6 +233,12 @@ The domain of the app: exercises, routines and workouts. Its pure modules are `s
 - **TMR-2** The rest is the rest of the item of the day of the workout, else the rest of the
   exercise, else the default rest of the settings.
 - **TMR-3** **+15 s** and **−15 s** change the time left, never below zero. **Skip** stops the timer.
+- **TMR-4** A set of a type with seconds (`time`, `distance_time`, `weight_time`) has a stopwatch.
+  With planned seconds it counts down from them and stops at zero; else it counts up. The stop
+  writes the seconds to the set (WO-4): the time since the start, at most the planned seconds.
+  One stopwatch runs at a time; a start on another set stops the one that runs.
+- **TMR-5** The stopwatch stores its set, its start as a time and its planned seconds in
+  `pwa-training-routines.stopwatch`, a state of the device that does not sync, so a reload keeps it.
 
 ## Backup
 

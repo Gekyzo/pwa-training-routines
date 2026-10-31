@@ -30,6 +30,7 @@ import {
   skipEntry,
   unskipEntry,
   substituteEntry,
+  addWarmups,
 } from '#workouts';
 
 const DAY1 = new Date(2026, 9, 1, 18, 0);
@@ -479,4 +480,34 @@ test('an exercise back from a skip gets one set of the values of the last time (
   assert.deepEqual(entry.sets.map((s) => [s.id, s.weight, s.reps, s.done]), [['s9', 100, 5, false]]);
   ({ state } = unskipEntry(state, 'w2', 'n1', 's10'));
   assert.equal(entryOf(state, 'w2', 'n1').sets.length, 1);
+});
+
+test('warm-up sets go before the first working set, as warm-ups in the unit of the settings (WO-19)', () => {
+  let { state } = startWorkout(base(), DAY1, 'w1');
+  ({ state } = addEntry(state, 'w1', 'squat', 'n1', 's1'));
+  ({ state } = addSet(state, 'w1', 'n1', 's2'));
+  ({ state } = editSet(state, 'w1', 'n1', 's1', { kind: 'drop' }));
+  const before = state;
+  ({ state } = addWarmups(state, 'w1', 'n1', [{ weight: 20, reps: 10 }, { weight: 40, reps: 5 }], counter()));
+  const sets = entryOf(state, 'w1', 'n1').sets;
+  assert.deepEqual(sets.map((s) => [s.id, s.kind, s.weight, s.reps, s.unit, s.done]), [
+    ['s1', 'drop', null, null, 'kg', false],
+    ['id1', 'warmup', 20, 10, 'kg', false],
+    ['id2', 'warmup', 40, 5, 'kg', false],
+    ['s2', 'working', null, null, 'kg', false],
+  ]);
+  assert.equal(entryOf(before, 'w1', 'n1').sets.length, 2);
+  assert.notEqual(normalizeTraining(state), null);
+});
+
+test('warm-up sets go at the end with no working set; none changes nothing (WO-19)', () => {
+  let { state } = startWorkout(base(), DAY1, 'w1');
+  ({ state } = addEntry(state, 'w1', 'squat', 'n1', 's1'));
+  ({ state } = editSet(state, 'w1', 'n1', 's1', { kind: 'failure' }));
+  const same = addWarmups(state, 'w1', 'n1', [], counter());
+  assert.equal(same.state, state);
+  ({ state } = addWarmups(state, 'w1', 'n1', [{ weight: 20, reps: 10 }], counter()));
+  assert.deepEqual(entryOf(state, 'w1', 'n1').sets.map((s) => s.kind), ['failure', 'warmup']);
+  assert.equal(addWarmups(state, 'w1', 'nope', [{ weight: 20, reps: 10 }]).error.key, 'error.entryMissing');
+  assert.equal(addWarmups(state, 'nope', 'n1', [{ weight: 20, reps: 10 }]).error.key, 'error.workoutMissing');
 });

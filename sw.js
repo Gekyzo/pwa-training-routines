@@ -17,6 +17,7 @@ const SHELL = [
   './src/fitnotes.js',
   './src/wger.js',
   './src/timer.js',
+  './src/stopwatch.js',
   './src/bests.js',
   './src/plates.js',
   './src/body.js',

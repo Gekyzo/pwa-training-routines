@@ -29,6 +29,7 @@
 | `src/insights.js` | The series, the calendar, the consistency, the sets a week, the stalls and the comparison (STAT-1 to STAT-6) | `bests`, `progression`, `training`, `units` |
 | `src/goals.js` | The goals and their progress (GOAL-1, GOAL-2) | `bests`, `body`, `insights`, `training`, `units` |
 | `src/timer.js` | The rest of a set and the rest timer (TMR-1 to TMR-3) | `training` |
+| `src/stopwatch.js` | The stopwatch and the countdown of a set with seconds (TMR-4, TMR-5) | nothing |
 | `src/csv.js` | The CSV export of the done sets (DATA-2) | `training`, `units` |
 | `src/backup.js` | The restore by merge, the backup reminder and the text of a workout (DATA-3, DATA-5, INT-1) | `config`, `training`, `units` |
 | `src/fitnotes.js` | The parse, the preview and the apply of a FitNotes CSV (DATA-4) | `training` |
@@ -120,6 +121,7 @@ sync keeps `pwa-training-routines.sync` and `pwa-training-routines.queue` ([09-s
 | `tests/insights.test.js` | The dates, the series, the calendar, the consistency, the sets a week, the stalls and the comparison |
 | `tests/goals.test.js` | The goals, their checks and their progress |
 | `tests/timer.test.js` | The rest of a set, the time left, the change of time and the stored timer |
+| `tests/stopwatch.test.js` | The stopwatch, the countdown, the stop and the stored stopwatch |
 | `tests/csv.test.js` | The rows, the order and the quotes of the CSV export |
 | `tests/backup.test.js` | The merge of two docs, the backup reminder and the text of a workout |
 | `tests/fitnotes.test.js` | The parse of a FitNotes CSV, the preview and the apply |
