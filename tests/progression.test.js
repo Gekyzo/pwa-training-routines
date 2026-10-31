@@ -259,3 +259,30 @@ test('a linear start plans the progressed weight on every set', () => {
   assert.equal(entry.target.weight, 102.5);
   assert.deepEqual(entry.sets.map((s) => [s.weight, s.reps]), [[102.5, 5], [102.5, 5], [102.5, 5]]);
 });
+
+test('the first session takes the weight of the item as it is (PRG-1)', () => {
+  assert.equal(next(base({ rule: LINEAR, weight: 101 })).weight, 101);
+});
+
+test('the first session reads only finished workouts of the exercise', () => {
+  const open = withWorkouts(base({ rule: LINEAR, weight: null }), session('2026-10-01', fives(80), { itemId: null }), session('2026-10-02', fives(120), { itemId: null, finished: false }));
+  assert.equal(next(open).weight, 80);
+});
+
+test('an increment in another unit adds to the weight with one decimal, with no floor in that unit', () => {
+  const lb = (extra) => ({ ...base({ rule: LINEAR, weight: 225, ...extra }, { increment: 2.5, unit: 'kg' }), settings: { ...emptyTraining().settings, unit: 'lb' } });
+  assert.equal(next(lb()).weight, 225);
+  const after = withWorkouts(lb(), session('2026-10-01', [225, 225, 225].map((w) => set(w, 5, { unit: 'lb' })), { target: T(225, { unit: 'lb' }) }));
+  assert.deepEqual([next(after).weight, next(after).unit], [230.5, 'lb']);
+  const exercise = { ...base().exercises[0], increment: 2.5, unit: 'kg' };
+  assert.equal(roundLoad(base(), exercise, 202.54, 'lb'), 202.5);
+});
+
+test('a success after a deload adds the increment to the deload weight (PRG-3)', () => {
+  const state = withWorkouts(
+    base({ rule: { ...LINEAR, failAfter: 1 } }),
+    session('2026-10-01', fives(100, [5, 5, 3]), { target: T(100) }),
+    session('2026-10-03', fives(90), { target: T(90) }),
+  );
+  assert.deepEqual([next(state).weight, next(state).state.failures], [92.5, 0]);
+});

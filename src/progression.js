@@ -35,12 +35,15 @@ export const setRule = (state, routineId, dayId, itemId, rule) => {
 export const incrementOf = (exercise, unit) =>
   exercise?.increment ? convert(exercise.increment, exercise.unit ?? unit, unit) : DEFAULT_INCREMENT[unit];
 
-// A weight of a target, rounded down to the increment, from 0 to 1000. The plates of a barbell
-// (PR-6) round it here too.
+// A weight of a target, from 0 to 1000: rounded down to the increment when the increment is in
+// `unit`, else kept to one decimal (a floor in another unit would undo the increment). The plates
+// of a barbell (PR-6) round it here too.
 export const roundLoad = (state, exercise, weight, unit) => {
   if (weight === null) return null;
+  const foreign = Boolean(exercise?.increment) && (exercise.unit ?? unit) !== unit;
   const step = incrementOf(exercise, unit);
-  return Math.min(Math.max(tidy(Math.floor(weight / step + 1e-9) * step), 0), 1000);
+  const value = foreign ? Math.round(weight * 10) / 10 : tidy(Math.floor(weight / step + 1e-9) * step);
+  return Math.min(Math.max(value, 0), 1000);
 };
 
 // The finished sessions of an item, oldest first: its entries of its exercise that are not skipped.
@@ -58,14 +61,15 @@ const ownTarget = (state, item) => ({
   sets: item.sets, reps: item.reps, repsMax: item.repsMax, weight: item.weight, unit: state.settings.unit, rest: item.rest,
 });
 
-// The first session: the weight of the item, else the heaviest done set of the newest workout of the exercise.
-const firstWeight = (state, item, unit) => {
+// The first session: the weight of the item as it is, else the heaviest counted set of the newest
+// finished workout of the exercise, rounded.
+const firstWeight = (state, exercise, item, unit) => {
   if (item.weight !== null) return item.weight;
-  for (const workout of sortedWorkouts(state)) {
+  for (const workout of sortedWorkouts(state).filter((w) => w.finished !== null)) {
     const weights = workout.entries
       .filter((e) => e.exerciseId === item.exerciseId)
       .flatMap((e) => counted(e).filter((s) => s.weight !== null).map((s) => convert(s.weight, s.unit, unit)));
-    if (weights.length) return Math.max(...weights);
+    if (weights.length) return roundLoad(state, exercise, Math.max(...weights), unit);
   }
   return null;
 };
@@ -83,7 +87,7 @@ const outcome = (entry, target, need, unit) => {
 const progress = (state, item, exercise, rule, unit) => {
   const history = itemHistory(state, item);
   const round = (weight) => roundLoad(state, exercise, weight, unit);
-  if (history.length === 0) return { weight: round(firstWeight(state, item, unit)), plan: null, failures: 0 };
+  if (history.length === 0) return { weight: firstWeight(state, exercise, item, unit), plan: null, failures: 0 };
   const topOf = (target) => (rule.type === 'double' ? target.repsMax ?? target.reps : target.reps);
   let failures = 0;
   let deload = false;

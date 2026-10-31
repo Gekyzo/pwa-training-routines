@@ -18,15 +18,19 @@ changes it. A start from a day keeps a copy of it in each exercise of the workou
   as the target has, meet the target sets in their order.
 - **Unit**: the unit of the settings, or the unit of a percent rule. A weight in another unit
   converts to kg to compare, with 0.05 kg of tolerance.
-- **Increment**: the increment of the exercise in its unit (EX-5), else 2.5 kg or 5 lb.
-- **Rounding**: each weight of a rule rounds down to the increment, from 0 to 1000.
+- **Increment**: the increment of the exercise in its unit (EX-5), converted to the unit of the
+  target, else 2.5 kg or 5 lb.
+- **Rounding**: a weight that a rule computes rounds down to the increment when the increment is
+  in the unit of the target. An increment in another unit leaves the weight at one decimal. A
+  weight stays from 0 to 1000.
 
 ## Rules
 
 - **PRG-1** A rule is `null` (none), `linear` or `double` with `failAfter` (1 to 10, 3) and
   `deload` (0 to 50 %, 10), or `percent` (TRN-7); another value is `error.rule`. An item with no
-  rule has its own targets. The first session of a rule takes the weight of the item, else the
-  heaviest counted set of the newest workout of the exercise, else no weight. **Linear**: a
+  rule has its own targets. The first session of a rule takes the weight of the item as it is,
+  else the heaviest counted set of the newest finished workout of the exercise, rounded, else no
+  weight. **Linear**: a
   session is a success when each target set has a counted set with the target reps or more at the
   target weight or more. After a success the weight is the lowest weight of those sets plus the
   increment; after a failure it stays the target weight.
