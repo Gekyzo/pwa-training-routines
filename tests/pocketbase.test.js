@@ -305,3 +305,10 @@ test('subscribe reads the token at each PB_CONNECT and calls onReconnect at each
   assert.deepEqual(tokens, ['first', 'second']);
   assert.equal(reconnects, 1);
 });
+
+test('a client with no EventSource opens no stream, and its close does nothing (SYNC-3)', () => {
+  const client = createClient({ url: URL_, fetch: async () => reply(204, null) });
+  const close = client.subscribe('t', () => {});
+  assert.equal(typeof close, 'function');
+  assert.doesNotThrow(close);
+});

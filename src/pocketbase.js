@@ -182,6 +182,8 @@ export const createClient = ({ url, fetch, EventSource = null }) => {
     // connects again by itself and by then the token may be a refreshed one. `onReconnect` runs at
     // each connect after the first: the stream missed the changes of the time between.
     subscribe: (token, onChange, { onReconnect = () => {} } = {}) => {
+      // With no EventSource (an old browser, or a test) there is no stream: the other syncs remain.
+      if (typeof EventSource !== 'function') return () => {};
       const tokenOf = typeof token === 'function' ? token : () => token;
       const source = new EventSource(`${base}/api/realtime`);
       let connects = 0;
