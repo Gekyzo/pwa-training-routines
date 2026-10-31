@@ -257,7 +257,7 @@ const cleanWeek = (week) => {
 };
 
 // TRN-7: the rule of progression of an item (PRG): `null` for none, `undefined` when it is not valid.
-const cleanRule = (r) => {
+export const cleanRule = (r) => {
   if (r === null || r === undefined) return null;
   if (!isObject(r) || !RULE_TYPES.includes(r.type)) return undefined;
   if (r.type === 'percent') {

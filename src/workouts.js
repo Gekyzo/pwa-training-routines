@@ -1,4 +1,5 @@
 import { FIELDS, SET_KINDS, checkNumber, checkComment, findById, localDate, sortedWorkouts } from '#training';
+import { nextTarget } from '#progression';
 
 // Workouts: the start, the sets, the finish, the next day of a routine and the history of an
 // exercise (WO-1 to WO-18).
@@ -50,19 +51,22 @@ export const previousSets = (state, exerciseId, exceptId = null) => {
   return [];
 };
 
-// WO-18: the targets of an item at the start of a workout. Progression (PRG) computes them here.
-export const targetOf = (state, routine, day, item) => ({
-  sets: item.sets, reps: item.reps, repsMax: item.repsMax, weight: item.weight, unit: state.settings.unit, rest: item.rest,
-});
+// WO-18: the targets of an item at the start of a workout, after progression (PRG): the snapshot
+// of the entry, and the plan of each set when the rule gives one.
+export const targetOf = (state, routine, day, item) => {
+  const { plan, state: _rule, ...target } = nextTarget(state, routine.id, day.id, item.id);
+  return { target, plan };
+};
 
-// The planned sets of a target: its values first, else the values of the last time (WO-8).
-const plannedSets = (state, exerciseId, target, newId) => {
+// The planned sets of a target: the values of its plan, else of the target, else of the last time (WO-8).
+const plannedSets = (state, exerciseId, target, plan, newId) => {
   const previous = previousSets(state, exerciseId);
-  return Array.from({ length: target.sets }, (_, index) => {
+  return Array.from({ length: plan?.length ?? target.sets }, (_, index) => {
     const last = previous[Math.min(index, previous.length - 1)];
     const set = last ? { ...blankSet(newId(), last.unit), ...copyValues(last) } : blankSet(newId(), state.settings.unit);
-    if (target.weight !== null) Object.assign(set, { weight: target.weight, unit: target.unit });
-    if (target.reps !== null) set.reps = target.reps;
+    const { weight, reps } = plan?.[index] ?? target;
+    if (weight !== null) Object.assign(set, { weight, unit: target.unit });
+    if (reps !== null) set.reps = reps;
     return set;
   });
 };
@@ -80,8 +84,8 @@ export const startFromDay = (state, routineId, dayId, now, id = uuid(), newId = 
   const day = findById(routine.days, dayId);
   if (!day) return { state, error: { key: 'error.dayMissing' } };
   const entries = day.items.map((item) => {
-    const target = targetOf(state, routine, day, item);
-    return newEntry(newId(), item.exerciseId, plannedSets(state, item.exerciseId, target, newId), { itemId: item.id, target });
+    const { target, plan } = targetOf(state, routine, day, item);
+    return newEntry(newId(), item.exerciseId, plannedSets(state, item.exerciseId, target, plan, newId), { itemId: item.id, target });
   });
   const workout = newWorkout(now, id, { routineId, dayId, routineName: routine.name, dayName: day.name, entries });
   return { state: { ...state, workouts: [...state.workouts, workout] } };

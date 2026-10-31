@@ -109,10 +109,14 @@ The domain of the app: exercises, routines and workouts. Its pure modules are `s
 - **RT-3** The day that a routine offers next is the day after the day of its newest workout, in
   a cycle; with no workout, or when the day of each of its workouts is gone, its first day. It
   does not depend on the calendar, so a missed day does not break the cycle.
+- **RT-4** A workout from a day can skip or substitute an exercise of the day (WO-17) and add
+  another exercise (WO-3).
 - **RT-5** **Duplicate** copies a routine with new ids for it, its days and its items. The copy is
   not archived, keeps the weekdays of the days, has the time of the copy as `created`, and the name `<name> (2)`, `(3)` and so on:
   the first that no routine has, with no regard to case, within 60 characters. **Archive** hides a
   routine from Next day and Today; **Restore** shows it again. Its workouts stay.
+- **RT-6** A workout keeps the targets of its start, after progression (WO-18, PRG-1). A later
+  edit of the routine changes neither a past workout nor the open workout.
 - **RT-7** A day has weekdays: unique whole numbers from 0 (Monday) to 6 (Sunday), kept sorted
   (`error.weekday` for another value). **Today** lists the days of the routines not archived that
   have the local weekday of now, in the order of the routines, then of the days.
@@ -141,7 +145,8 @@ The domain of the app: exercises, routines and workouts. Its pure modules are `s
 - **WO-8** A new set copies the values, never the done mark or the comment: of the last set of its
   exercise in this workout; else of the set of the same place in the newest other workout that
   has done sets of the exercise (the last one when there are fewer); else it is blank. A planned
-  set of a day takes the weight and the reps of its item when the item has them.
+  set of a day takes the weight and the reps of the next target of its item (PRG-1) when it has
+  them: of the plan of the set when the rule gives one, in the unit of the target.
 - **WO-9** A workout, an exercise of a workout or a set that is not in the doc is
   `error.workoutMissing`, `error.entryMissing` or `error.setMissing`.
 - **WO-10** The history of an exercise lists each workout with done sets of
@@ -173,8 +178,8 @@ The domain of the app: exercises, routines and workouts. Its pure modules are `s
   start and the target. The sets keep their values when the two types are the same, else they are
   blank, and a done set is then `error.entryHasDone`. A negative weight goes when the new exercise
   is not `bodyweight`.
-- **WO-18** A workout from a day keeps, for each exercise, the item and a copy of its target: sets,
-  reps, top of reps, weight, rest, and the unit of the settings. A later change of the routine
+- **WO-18** A workout from a day keeps, for each exercise, the item and a copy of its next target
+  (PRG-1): sets, reps, top of reps, weight, rest, and the unit of the settings or of a percent rule. A later change of the routine
   changes no workout.
 
 ## Records and units

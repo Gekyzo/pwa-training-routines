@@ -1,0 +1,138 @@
+import { cleanRule, findById, sortedWorkouts } from '#training';
+import { convert, toKg } from '#units';
+
+// Progression: the rule of an item and its next target, derived from the history at each read and
+// never stored (PRG-1 to PRG-5).
+
+export const DEFAULT_INCREMENT = Object.freeze({ kg: 2.5, lb: 5 });
+// A weight typed from the text of another unit is one decimal off; it still reaches the target.
+const TOLERANCE_KG = 0.05;
+
+const tidy = (value) => Math.round(value * 100) / 100;
+
+const locate = (state, routineId, dayId, itemId) => {
+  const routine = findById(state.routines, routineId);
+  if (!routine) return { error: { key: 'error.routineMissing' } };
+  const day = findById(routine.days, dayId);
+  if (!day) return { error: { key: 'error.dayMissing' } };
+  const item = findById(day.items, itemId);
+  if (!item) return { error: { key: 'error.itemMissing' } };
+  return { routine, day, item };
+};
+
+// PRG-1: the rule of an item, `null` for none (`error.rule` when it is not valid).
+export const setRule = (state, routineId, dayId, itemId, rule) => {
+  const { error } = locate(state, routineId, dayId, itemId);
+  if (error) return { state, error };
+  const clean = cleanRule(rule);
+  if (clean === undefined) return { state, error: { key: 'error.rule' } };
+  const items = (list) => list.map((i) => (i.id === itemId ? { ...i, rule: clean } : i));
+  const days = (list) => list.map((d) => (d.id === dayId ? { ...d, items: items(d.items) } : d));
+  return { state: { ...state, routines: state.routines.map((r) => (r.id === routineId ? { ...r, days: days(r.days) } : r)) } };
+};
+
+// The increment of an exercise in `unit`: its own, in its unit, else 2.5 kg or 5 lb.
+export const incrementOf = (exercise, unit) =>
+  exercise?.increment ? convert(exercise.increment, exercise.unit ?? unit, unit) : DEFAULT_INCREMENT[unit];
+
+// A weight of a target, rounded down to the increment, from 0 to 1000. The plates of a barbell
+// (PR-6) round it here too.
+export const roundLoad = (state, exercise, weight, unit) => {
+  if (weight === null) return null;
+  const step = incrementOf(exercise, unit);
+  return Math.min(Math.max(tidy(Math.floor(weight / step + 1e-9) * step), 0), 1000);
+};
+
+// The finished sessions of an item, oldest first: its entries of its exercise that are not skipped.
+// A substitute does not count.
+export const itemHistory = (state, item) =>
+  sortedWorkouts(state)
+    .filter((w) => w.finished !== null)
+    .reverse()
+    .flatMap((w) => w.entries.filter((e) => e.itemId === item.id && e.exerciseId === item.exerciseId && !e.skipped));
+
+// LOG-5: warm-up sets do not count for progression.
+const counted = (entry) => entry.sets.filter((s) => s.done && s.kind !== 'warmup');
+
+const ownTarget = (state, item) => ({
+  sets: item.sets, reps: item.reps, repsMax: item.repsMax, weight: item.weight, unit: state.settings.unit, rest: item.rest,
+});
+
+// The first session: the weight of the item, else the heaviest done set of the newest workout of the exercise.
+const firstWeight = (state, item, unit) => {
+  if (item.weight !== null) return item.weight;
+  for (const workout of sortedWorkouts(state)) {
+    const weights = workout.entries
+      .filter((e) => e.exerciseId === item.exerciseId)
+      .flatMap((e) => counted(e).filter((s) => s.weight !== null).map((s) => convert(s.weight, s.unit, unit)));
+    if (weights.length) return Math.max(...weights);
+  }
+  return null;
+};
+
+// A session against its target: every target set has a done set with `need` reps at the target weight.
+const outcome = (entry, target, need, unit) => {
+  const sets = counted(entry).slice(0, target.sets);
+  const heavy = (s) => target.weight === null || toKg(s.weight ?? 0, s.unit) >= toKg(target.weight, target.unit) - TOLERANCE_KG;
+  const success = sets.length === target.sets && sets.every((s) => (s.reps ?? 0) >= (need ?? 0) && heavy(s));
+  const weights = sets.filter((s) => s.weight !== null).map((s) => convert(s.weight, s.unit, unit));
+  return { success, sets, done: weights.length ? Math.min(...weights) : null };
+};
+
+// PRG-1 to PRG-3: linear and double progression.
+const progress = (state, item, exercise, rule, unit) => {
+  const history = itemHistory(state, item);
+  const round = (weight) => roundLoad(state, exercise, weight, unit);
+  if (history.length === 0) return { weight: round(firstWeight(state, item, unit)), plan: null, failures: 0 };
+  const topOf = (target) => (rule.type === 'double' ? target.repsMax ?? target.reps : target.reps);
+  let failures = 0;
+  let deload = false;
+  let last = null;
+  for (const entry of history) {
+    const target = entry.target ?? ownTarget(state, item);
+    last = { target, ...outcome(entry, target, topOf(target), unit) };
+    failures = last.success ? 0 : failures + 1;
+    // PRG-3: `failAfter` failures in a row deload, and the count restarts.
+    deload = failures >= rule.failAfter;
+    if (deload) failures = 0;
+  }
+  const { target, success, sets, done } = last;
+  const kept = target.weight !== null ? convert(target.weight, target.unit, unit) : done;
+  if (success) return { weight: done === null ? null : round(done + incrementOf(exercise, unit)), plan: null, failures };
+  if (deload) return { weight: kept === null ? null : round(kept * (1 - rule.deload / 100)), plan: null, failures };
+  const weight = kept === null ? null : round(kept);
+  const top = item.repsMax ?? item.reps;
+  if (rule.type !== 'double' || top === null) return { weight, plan: null, failures };
+  // PRG-2: each set plans one rep more than it did, up to the top; a set not done plans the reps.
+  const plan = Array.from({ length: item.sets }, (_, index) => ({
+    weight, reps: sets[index] ? Math.min(top, (sets[index].reps ?? 0) + 1) : item.reps, amrap: false,
+  }));
+  return { weight, plan, failures };
+};
+
+// PRG-5: the week is the sessions done mod the weeks; each full cycle adds `step` to the training max.
+const percent = (state, item, exercise, rule) => {
+  const sessions = itemHistory(state, item).length;
+  const week = sessions % rule.weeks.length;
+  const tm = tidy(rule.tm + Math.floor(sessions / rule.weeks.length) * rule.step);
+  const plan = rule.weeks[week].map((s) => ({ weight: roundLoad(state, exercise, (tm * s.pct) / 100, rule.unit), reps: s.reps, amrap: s.amrap }));
+  const top = plan.at(-1);
+  return {
+    sets: plan.length, reps: top.reps, repsMax: null, weight: top.weight, unit: rule.unit, rest: item.rest,
+    plan, state: { failures: null, week, tm },
+  };
+};
+
+// The next target of an item: its own targets with no rule, else the targets of its rule. `plan`
+// gives each set its weight and reps when they differ; `state` is what the screen shows of the rule.
+export const nextTarget = (state, routineId, dayId, itemId) => {
+  const { item, error } = locate(state, routineId, dayId, itemId);
+  if (error) return null;
+  const own = ownTarget(state, item);
+  const { rule } = item;
+  if (!rule) return { ...own, plan: null, state: { failures: null, week: null, tm: null } };
+  const exercise = findById(state.exercises, item.exerciseId);
+  if (rule.type === 'percent') return percent(state, item, exercise, rule);
+  const { weight, plan, failures } = progress(state, item, exercise, rule, own.unit);
+  return { ...own, weight, plan, state: { failures, week: null, tm: null } };
+};

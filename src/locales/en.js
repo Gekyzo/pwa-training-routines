@@ -150,6 +150,7 @@ export default {
   'error.dayTaken': 'The routine has a day with that name already.',
   'error.dayMissing': 'The day no longer exists.',
   'error.itemMissing': 'The exercise is no longer in the day.',
+  'error.rule': 'The progression rule is not valid.',
   'error.repsRange': 'A top of reps needs reps at or below it.',
   'error.workoutOpen': 'A workout is open: finish it first.',
   'error.workoutMissing': 'The workout no longer exists.',

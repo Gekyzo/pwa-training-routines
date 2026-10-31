@@ -20,7 +20,8 @@
 | `src/training.js` | The doc of the app, its validation, its orders, the settings and the shared checks (TRN-1 to TRN-6) | `config` |
 | `src/exercises.js` | Categories and exercises, and the common exercises (EX-1 to EX-8) | `training` |
 | `src/routines.js` | Routines, their days and their items, copies, weekdays and templates (RT-1, RT-5, RT-7, RT-8) | `exercises`, `training` |
-| `src/workouts.js` | Workouts: the start, the sets, the finish, the next day and the history (RT-3, WO-1 to WO-10) | `training` |
+| `src/workouts.js` | Workouts: the start, the sets, the finish, the next day and the history (RT-3, WO-1 to WO-10) | `progression`, `training` |
+| `src/progression.js` | The rule of progression of an item and its next target from the history (PRG-1 to PRG-5) | `training`, `units` |
 | `src/units.js` | The conversion of a weight between kg and lb, and the clock text (PR-8) | nothing |
 | `src/bests.js` | The personal records of an exercise (PR-1) | `training`, `units` |
 | `src/timer.js` | The rest of a set and the rest timer (TMR-1 to TMR-3) | `training` |
@@ -104,6 +105,7 @@ sync keeps `pwa-training-routines.sync` and `pwa-training-routines.queue` ([09-s
 | `tests/exercises.test.js` | Categories, exercises, the type lock, the delete rules and the common exercises |
 | `tests/routines.test.js` | Routines, days and items, their checks and their moves |
 | `tests/workouts.test.js` | The start, the planned sets, the values of the last time, the finish, the next day and the history |
+| `tests/progression.test.js` | The rule of an item, its history, linear, double and percent progression, the deload, the rounding and the planned sets of a start |
 | `tests/units.test.js` | The conversion and the rounding of a weight, and the clock text |
 | `tests/bests.test.js` | The records of each type, the tie and the units |
 | `tests/timer.test.js` | The rest of a set, the time left, the change of time and the stored timer |
