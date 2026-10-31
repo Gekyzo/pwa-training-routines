@@ -1,9 +1,16 @@
-// The training doc as records, one for each category, exercise, routine and workout and one for
-// the settings (SYNC-1), and the diff of two such sets (SYNC-2). Pure: no storage, no clock, no DOM.
-import { normalizeTraining } from '#training';
+// The training doc as records, one for each category, exercise, routine, workout, body entry and
+// goal and one for the settings (SYNC-1), and the diff of two such sets (SYNC-2). Pure: no storage, no clock, no DOM.
+import { normalizeTraining, TRAINING_VERSION } from '#training';
 
 // The kind of a record and the list of the doc that holds its entities. `settings` has no list.
-export const LISTS = { category: 'categories', exercise: 'exercises', routine: 'routines', workout: 'workouts' };
+export const LISTS = {
+  category: 'categories',
+  exercise: 'exercises',
+  routine: 'routines',
+  workout: 'workouts',
+  body: 'bodies',
+  goal: 'goals',
+};
 export const KINDS = [...Object.keys(LISTS), 'settings'];
 export const SETTINGS_KEY = 'settings';
 
@@ -26,7 +33,7 @@ export const rawDoc = (records) => {
   const recs = [...records.values()].sort((a, b) => byKey(recordKey(a.kind, a.key), recordKey(b.kind, b.key)));
   const ofKind = (kind) => recs.filter((rec) => rec.kind === kind).map(({ key, data }) => ({ ...data, id: key }));
   return {
-    version: 1,
+    version: TRAINING_VERSION,
     settings: records.get(recordKey('settings', SETTINGS_KEY))?.data,
     ...Object.fromEntries(Object.entries(LISTS).map(([kind, list]) => [list, ofKind(kind)])),
   };

@@ -1,12 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { toRecords, fromRecords, diffRecords, recordKey, KINDS } from '#records';
+import { toRecords, fromRecords, rawDoc, diffRecords, recordKey, KINDS, LISTS } from '#records';
 import { emptyTraining, normalizeTraining } from '#training';
 
 const set = (over = {}) => ({ id: 's1', weight: 60, unit: 'kg', reps: 5, seconds: null, meters: null, done: true, comment: '', ...over });
 
+const settings = () => ({ ...emptyTraining().settings, unit: 'lb', rest: 120 });
+
 const full = () => ({
-  version: 1,
+  version: 2,
   settings: { unit: 'lb', rest: 120 },
   categories: [{ id: 'c1', name: 'Chest' }],
   exercises: [
@@ -35,23 +37,39 @@ const full = () => ({
       entries: [{ id: 'n1', exerciseId: 'e1', sets: [set()] }],
     },
   ],
+  bodies: [
+    { id: 'b2', date: '2026-10-02', measure: 'weight', value: 80, unit: 'kg' },
+    { id: 'b1', date: '2026-10-01', measure: 'weight', value: 81, unit: 'kg' },
+  ],
+  goals: [{ id: 'g1', kind: 'body', exerciseId: null, metric: null, weight: 75, unit: 'kg', reps: null, date: null, created: '2026-10-01T10:00:00.000Z' }],
 });
 
 // The lists of a doc in the order of their ids, as fromRecords gives them.
 const byId = (doc) => {
   const sort = (list) => [...list].sort((a, b) => (a.id < b.id ? -1 : 1));
-  return { ...doc, categories: sort(doc.categories), exercises: sort(doc.exercises), routines: sort(doc.routines), workouts: sort(doc.workouts) };
+  return Object.fromEntries(Object.entries(doc).map(([name, value]) => [name, Object.values(LISTS).includes(name) ? sort(value) : value]));
 };
 
-test('the kinds are the four lists and the settings', () => {
-  assert.deepEqual(KINDS, ['category', 'exercise', 'routine', 'workout', 'settings']);
+test('the kinds are the six lists and the settings', () => {
+  assert.deepEqual(KINDS, ['category', 'exercise', 'routine', 'workout', 'body', 'goal', 'settings']);
+  assert.deepEqual(LISTS, { category: 'categories', exercise: 'exercises', routine: 'routines', workout: 'workouts', body: 'bodies', goal: 'goals' });
+});
+
+test('the raw doc of records is version 2 and has every list', () => {
+  const doc = rawDoc(new Map());
+  assert.equal(doc.version, 2);
+  for (const list of Object.values(LISTS)) assert.deepEqual(doc[list], [], list);
 });
 
 test('toRecords gives one record for each entity and one settings record (SYNC-1)', () => {
-  const records = toRecords(full());
-  assert.deepEqual([...records.keys()].sort(), ['category:c1', 'exercise:e1', 'exercise:e2', 'routine:r1', 'settings:settings', 'workout:w1']);
-  assert.deepEqual(records.get('settings:settings'), { kind: 'settings', key: 'settings', data: { unit: 'lb', rest: 120 } });
-  assert.deepEqual(records.get(recordKey('category', 'c1')), { kind: 'category', key: 'c1', data: { name: 'Chest' } });
+  const records = toRecords(normalizeTraining(full()));
+  assert.deepEqual([...records.keys()].sort(), [
+    'body:b1', 'body:b2', 'category:c1', 'exercise:e1', 'exercise:e2', 'goal:g1', 'routine:r1', 'settings:settings', 'workout:w1',
+  ]);
+  assert.deepEqual(records.get('settings:settings'), { kind: 'settings', key: 'settings', data: settings() });
+  assert.deepEqual(records.get('body:b1'), { kind: 'body', key: 'b1', data: { date: '2026-10-01', measure: 'weight', value: 81, unit: 'kg' } });
+  assert.equal(records.get('goal:g1').data.kind, 'body');
+  assert.deepEqual(records.get(recordKey('category', 'c1')), { kind: 'category', key: 'c1', data: { name: 'Chest', weekMin: null, weekMax: null } });
 });
 
 test('the data of a record is the entity without its id, and carries no position', () => {
@@ -72,12 +90,22 @@ test('the empty doc has only the settings record', () => {
 });
 
 test('fromRecords of toRecords gives the same doc, each list by id', () => {
-  assert.deepEqual(fromRecords(toRecords(full())), byId(normalizeTraining(full())));
+  const doc = normalizeTraining(full());
+  assert.deepEqual(fromRecords(toRecords(doc)), byId(doc));
 });
 
 test('fromRecords takes the records in any order', () => {
-  const records = [...toRecords(full()).entries()].reverse();
-  assert.deepEqual(fromRecords(new Map(records)), byId(full()));
+  const doc = normalizeTraining(full());
+  const records = [...toRecords(doc).entries()].reverse();
+  assert.deepEqual(fromRecords(new Map(records)), byId(doc));
+});
+
+test('records of an old device, with none of the fields of version 2, read with the defaults', () => {
+  const doc = fromRecords(toRecords(full()));
+  assert.equal(doc.version, 2);
+  assert.deepEqual(doc.settings, settings());
+  assert.deepEqual(doc.categories, [{ id: 'c1', name: 'Chest', weekMin: null, weekMax: null }]);
+  assert.equal(doc.routines[0].archived, false);
 });
 
 test('fromRecords with no settings record gives the default settings', () => {
@@ -89,13 +117,16 @@ test('fromRecords with no settings record gives the default settings', () => {
 test('the id of a record is its key, also when its data holds another id', () => {
   const records = toRecords(full());
   records.set('category:c1', { kind: 'category', key: 'c1', data: { id: 'other', name: 'Chest' } });
-  assert.deepEqual(fromRecords(records).categories, [{ id: 'c1', name: 'Chest' }]);
+  assert.deepEqual(fromRecords(records).categories, [{ id: 'c1', name: 'Chest', weekMin: null, weekMax: null }]);
 });
 
 test('fromRecords gives null when the validation refuses the records', () => {
   const records = toRecords(full());
   records.set('category:c2', { kind: 'category', key: 'c2', data: { name: 'chest' } });
   assert.equal(fromRecords(records), null);
+  const body = toRecords(full());
+  body.set('body:b3', { kind: 'body', key: 'b3', data: { date: 'x', measure: 'weight', value: 80, unit: 'kg' } });
+  assert.equal(fromRecords(body), null);
 });
 
 test('diffRecords of equal maps is empty', () => {

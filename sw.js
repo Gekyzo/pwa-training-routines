@@ -1,4 +1,4 @@
-const CACHE = 'pwa-training-routines-shell-v2';
+const CACHE = 'pwa-training-routines-shell-v3';
 
 const SHELL = [
   './',

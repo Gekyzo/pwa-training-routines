@@ -68,11 +68,13 @@ export const exportFilename = (date) => {
   return `${APP_SLUG}-${day}-${time}.json`;
 };
 
-export const importJson = (text, normalize) => {
+// `newer(data)` is true for a doc of a version above the one of the app: it gets its own error.
+export const importJson = (text, normalize, newer = () => false) => {
   const { data, invalidJson } = parse(text);
   if (invalidJson) return { error: { key: 'error.invalidJson' } };
   const state = normalize(data);
-  return state ? { state } : { error: { key: 'error.notBackup' } };
+  if (state) return { state };
+  return { error: { key: newer(data) ? 'error.backupNewer' : 'error.notBackup' } };
 };
 
 // The language that the user chose. It is a preference of the device, not a part of the state.

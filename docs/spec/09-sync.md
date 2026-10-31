@@ -9,11 +9,13 @@ has a test file of the same name.
 ## Records
 
 - **SYNC-1** The server holds one record for each category, each exercise, each routine, each
-  workout and one for the settings. A record has `owner`, `kind` (`category`, `exercise`,
-  `routine`, `workout` or `settings`), `key`, `data`, `deleted` and `updated`. The key is the `id`
-  of the entity, and `settings` for the settings. `data` is the entity without its `id`; for the
-  settings it is `{ unit, rest }`. In the app a record is named `<kind>:<key>`. A record carries no
-  position: the app sorts each list when it reads it (TRN-3), so an add sends one record. The doc
+  workout, each body entry, each goal and one for the settings. A record has `owner`, `kind`
+  (`category`, `exercise`, `routine`, `workout`, `body`, `goal` or `settings`), `key`, `data`,
+  `deleted` and `updated`. The key is the `id` of the entity, and `settings` for the settings.
+  `data` is the entity without its `id`; for the settings it is the settings of TRN-1. The doc of
+  the records is version 2: a record of version 1 reads with the defaults of TRN-2, and the merge
+  sends it back in the shape of version 2 (SYNC-9). In the app a record is named `<kind>:<key>`.
+  A record carries no position: the app sorts each list when it reads it (TRN-3), so an add sends one record. The doc
   of a set of records is valid by TRN-2, its lists in any order; with no settings record it has the
   default settings. A device preference does not sync: the language, the hand, the theme, the
   modules, the walkthrough and the seen version. The rest timer and the workout in view do not

@@ -1,4 +1,4 @@
-import { normalizeTraining, setUnit, setRest, UNITS } from '#training';
+import { normalizeTraining, isNewerTraining, setUnit, setRest, UNITS } from '#training';
 import { toCsv, csvFilename } from '#csv';
 import { clock } from '#units';
 import { exportJson, exportFilename, importJson, resetAll } from '#storage';
@@ -133,7 +133,7 @@ export const bind = () => {
     const [file] = event.target.files;
     event.target.value = '';
     if (!file) return;
-    const result = importJson(await file.text(), normalizeTraining);
+    const result = importJson(await file.text(), normalizeTraining, isNewerTraining);
     if (result.error) {
       showToast(textOf(result.error));
       return;

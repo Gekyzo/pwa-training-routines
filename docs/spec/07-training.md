@@ -6,16 +6,21 @@ The domain of the app: exercises, routines and workouts. Its pure modules are `s
 
 ## Doc
 
-- **TRN-1** The doc is stored as JSON under `pwa-training-routines.training`: `{ version: 1,
-  settings, categories, exercises, routines, workouts }`. `settings` is `{ unit, rest }`: the unit
-  `kg` or `lb` and the default rest in seconds, `kg` and 90 for a new install. A stored doc that is
-  not valid is kept under `pwa-training-routines.training.corrupt`, and the app starts with the
-  empty doc.
-- **TRN-2** `normalizeTraining` accepts a doc of version 1 whose entries each have an id of 1 to 64
-  characters, unique in its list, and the fields of the shape of the design. It trims each name,
-  drops unknown fields, reads a missing optional field as `null`, `false` or `''`, and replaces
-  settings that are not valid with the defaults. Two categories, two exercises, two routines or two
-  days of one routine with one name, with no regard to case, make the doc not valid.
+- **TRN-1** The doc is stored as JSON under `pwa-training-routines.training`: `{ version: 2,
+  settings, categories, exercises, routines, workouts, bodies, goals }`. `settings` is `{ unit,
+  rest, formula, effort, plates, bar, sex, measures, stallAfter }`. A new install has `kg`, a rest
+  of 90 seconds, `epley`, the effort scale `none`, the plates per side `kg` 25, 20, 15, 10, 5, 2.5,
+  1.25 and `lb` 45, 35, 25, 10, 5, 2.5, the bar `kg` 20 and `lb` 45, no sex (`null`), no measure
+  and a stall after 4 workouts. A stored doc that is not valid is kept under
+  `pwa-training-routines.training.corrupt`, and the app starts with the empty doc.
+- **TRN-2** `normalizeTraining` accepts a doc of version 1 or 2 whose entries each have an id of 1
+  to 64 characters, unique in its list, and the fields of the shape of the design (TRN-7). It
+  writes version 2. A version 1 doc migrates: it gets no body entry and no goal, and each new field
+  takes its default. It trims each name, drops unknown fields, reads a missing optional field as
+  `null`, `false`, `''` or `[]`, and replaces each setting that is not valid with its default,
+  alone. Two categories, two exercises, two routines or two days of one routine with one name, with
+  no regard to case, make the doc not valid. A doc of a version above 2 is not valid
+  (`isNewerTraining`); its import is `error.backupNewer` (DATA-2).
 - **TRN-3** No order is stored. Categories and exercises sort by name, routines by creation, oldest
   first, workouts by date and then by start, newest first. The days of a routine and the items of a
   day keep the order of their list.
@@ -23,18 +28,50 @@ The domain of the app: exercises, routines and workouts. Its pure modules are `s
   comment is at most 500 characters (`error.commentTooLong`). A number takes a comma or a point and
   is in its range (`error.numberRange`), or `error.numberRequired` when it is empty and needed:
   weight 0 to 1000 with one decimal, reps 0 to 1000, seconds 0 to 86 400, meters 0 to 1 000 000,
-  sets of an item 1 to 20, rest 0 to 600 seconds. Reps, seconds, sets and rest are integers.
+  sets of an item 1 to 20, rest 0 to 600 seconds, RPE 6 to 10, RIR 0 to 10, body weight 20 to
+  400, a body measure 0 to 1000, working sets a week 0 to 100, a stall after 2 to 20 workouts, an
+  increment 0.1 to 100, a bar 0 to 100. Reps, seconds, sets, rest, RIR, the working sets a week
+  and the stall are integers. In the doc the weight of a set is -1000 to 1000 (LOG-9).
 - **TRN-5** A reference to an exercise, a category or a routine that the doc does not hold is
   valid: a sync can bring a workout before its exercise. The screen names it `exercise.unknown`.
 - **TRN-6** `setUnit` takes `kg` or `lb` (else `error.unit`); `setRest` takes a rest of TRN-4.
+- **TRN-7** The fields of version 2, each not valid makes its entry not valid:
+  - A category has `weekMin` and `weekMax`, each `null` or 0 to 100; with both, `weekMax` is at or
+    above `weekMin`.
+  - An exercise has `increment` (0.1 to 100), `bar` (0 to 100) and `unit` (`kg` or `lb`, the unit of
+    the two), `equipment` (`barbell`, `dumbbell`, `machine`, `cable`, `bodyweight` or `other`), each
+    `null` by default, `notes` (at most 500 characters, `''`) and `unilateral` (`false`).
+  - A routine has `archived` (`false`). A day has `weekdays`: unique integers, 0 for Monday to 6
+    for Sunday (`[]`).
+  - An item has `rule`: `null`; `{ type: 'linear' | 'double', failAfter, deload }` with
+    `failAfter` 1 to 10 (3) and `deload` 0 to 50 (10); or `{ type: 'percent', tm, unit, step,
+    weeks }` with `tm` 0 to 1000, `step` 0 to 100 and 1 to 8 weeks of 1 to 10 sets, each `{ pct,
+    reps, amrap }` with `pct` 1 to 150, `reps` 1 to 100 and `amrap` `true` or `false` (`false`).
+  - An entry has `itemId`, `group` and `substituteFor` (an id or `null`), `skipped` (`false`) and
+    `target`: `null` or `{ sets, reps, repsMax, weight, unit, rest }` with the limits of an item.
+  - A set has `kind` (`working`, `warmup`, `drop` or `failure`, `working` by default), `effort`
+    (`null`, or 0 to 10 in steps of 0.5; the edit checks the scale of the settings) and `at` (an ISO
+    time or `null`).
+  - The settings have `formula` (`epley` or `brzycki`), `effort` (`none`, `rpe` or `rir`), `plates`
+    and `bar` for each unit (a plate weighs more than 0 and up to 100), `sex` (`null`, `male` or
+    `female`), `measures` (`[{ id, name, unit }]`, unit `cm`, `in` or `%`, unique ids and names,
+    never the id `weight`) and `stallAfter`.
+  - A body entry is `{ id, date, measure, value, unit }`: `measure` `weight` with `kg` or `lb`, or
+    the id of a measure with `cm`, `in` or `%`; the date is `YYYY-MM-DD` and the value 0 to 1000.
+    A measure that the settings do not hold is valid (TRN-5).
+  - A goal is `{ id, kind, exerciseId, metric, weight, unit, reps, date, created }`. Of kind
+    `exercise` it has an exercise id and the metric `e1rm` (no reps) or `set` (reps 0 to 1000). Of
+    kind `body` it has no exercise, no metric and no reps. The weight is 0 to 1000, the date is
+    `YYYY-MM-DD` or `null`, and `created` is an ISO time.
 
 ## Exercises
 
 - **EX-1** An exercise has a name, a category or none, a type, a rest or none, and an archive
   flag. Its name is unique with no regard to case (`error.exerciseTaken`). An id that is not in the
   doc is `error.exerciseMissing`.
-- **EX-2** The type is `weight_reps` (weight and reps), `reps`, `time` (seconds) or
-  `distance_time` (meters and seconds); it fixes the fields of each set. Another type is
+- **EX-2** The type is `weight_reps` (weight and reps), `reps`, `time` (seconds),
+  `distance_time` (meters and seconds), `weight_time` (weight and seconds) or `weight_distance`
+  (weight and meters); it fixes the fields of each set. Another type is
   `error.exerciseType`. The type of an exercise that a workout holds does not change
   (`error.typeLocked`).
 - **EX-3** A category has a name, unique with no regard to case (`error.categoryTaken`). A
@@ -112,7 +149,9 @@ The domain of the app: exercises, routines and workouts. Its pure modules are `s
 ## Backup
 
 - **DATA-1** The doc lives on the device and works with no network, with an account or with none.
-- **DATA-2** **Export JSON** writes the doc, which **Import** reads back. **Export CSV** writes one
+- **DATA-2** **Export JSON** writes the doc, which **Import** reads back. An import of a file of a
+  newer version of the doc (TRN-2) is `error.backupNewer`; another file that is not a doc is
+  `error.notBackup`. **Export CSV** writes one
   row for each done set, oldest first, with the columns `Date`, `Exercise`, `Category`, `Weight`,
   `Weight Unit`, `Reps`, `Distance`, `Distance Unit` (`m`), `Time` (`m:ss` or `h:mm:ss`) and
   `Comment`, quoted as RFC 4180. The file has the name of the JSON export with `.csv`.

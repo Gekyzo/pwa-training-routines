@@ -110,6 +110,13 @@ test('an import of a file of another app is an error', () => {
   assert.deepEqual(importJson('{"version":5,"items":[],"recipes":[]}', normalize), { error: { key: 'error.notBackup' } });
 });
 
+test('an import of a backup of a newer version is its own error', () => {
+  const newer = (data) => data?.version > 1;
+  assert.deepEqual(importJson('{"version":2,"items":[]}', normalize, newer), { error: { key: 'error.backupNewer' } });
+  assert.deepEqual(importJson('{"version":0,"items":[]}', normalize, newer), { error: { key: 'error.notBackup' } });
+  assert.deepEqual(importJson('{"version":1,"items":[]}', normalize, newer), { state: { version: 1, items: [] } });
+});
+
 test('an export imports back', () => {
   const doc = { version: 1, items: ['a'] };
   assert.deepEqual(importJson(exportJson(doc), normalize), { state: doc });

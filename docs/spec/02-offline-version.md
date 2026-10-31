@@ -14,7 +14,7 @@ Rules of `sw.js`, `src/version.js`, `version.json`, `scripts/bump-version.mjs`,
 - **SW-3** At its install the worker downloads the full shell past the HTTP cache, so the shell is
   never a mix of two deploys. It then takes control at once (`skipWaiting`, `clients.claim`).
 - **SW-4** At its activation the worker deletes each cache that is not the current one or
-  `pwa-training-routines-manifest` (SW-13). The cache name is `pwa-training-routines-shell-v2`; the template
+  `pwa-training-routines-manifest` (SW-13). The cache name is `pwa-training-routines-shell-v3`; the template
   took v2 for design system 0.7.1, v3 for 0.7.2 and v4 for the release notes, and `npm run init` starts a new app at v1 (ENG-17).
 - **SW-5** The worker answers only `GET` requests of its own origin.
 - **SW-6** A request is answered stale-while-revalidate: the cached copy at once, and a fresh copy

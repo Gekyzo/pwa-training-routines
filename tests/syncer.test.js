@@ -9,9 +9,18 @@ import { emptyTraining, normalizeTraining, sortedExercises, TRAINING_KEY } from 
 import { APP_SLUG } from '#config';
 import { toRecords } from '#records';
 
-const exercise = (id, name, over = {}) => ({ id, name, categoryId: null, type: 'weight_reps', rest: null, archived: false, ...over });
+const exercise = (id, name, over = {}) => ({
+  id, name, categoryId: null, type: 'weight_reps', rest: null, archived: false,
+  increment: null, bar: null, unit: null, equipment: null, notes: '', unilateral: false, ...over,
+});
 const withExercises = (exercises, over = {}) => ({ ...emptyTraining(), exercises, ...over });
 const names = (doc) => sortedExercises(doc).map((e) => e.name);
+const settingsOf = (over) => ({ ...emptyTraining().settings, ...over });
+// The data of an exercise record: the exercise with no id, in the shape of version 2.
+const exerciseData = (name, over = {}) => {
+  const { id: _, ...data } = exercise('x', name, over);
+  return data;
+};
 
 const base64url = (value) => Buffer.from(JSON.stringify(value)).toString('base64url');
 // A JWT whose `exp` is far in the future; the fake server reads the user id from it.
@@ -203,7 +212,7 @@ test('a save is queued, pushed, and the queue is empty after the run (SYNC-2, SY
   assert.equal(await a.syncer.run(), 'ok');
   assert.deepEqual(loadQueue(a.storage), []);
   assert.deepEqual(server.keys('u1'), ['exercise:e1']);
-  assert.deepEqual(server.live('u1')[0].data, { name: 'Squat', categoryId: null, type: 'weight_reps', rest: null, archived: false });
+  assert.deepEqual(server.live('u1')[0].data, exerciseData('Squat'));
   assert.deepEqual(a.box.statuses.at(-1), { online: true, pending: 0, lastSync: '2026-10-24T08:00:00.000Z', auth: false, reached: 1 });
 });
 
@@ -258,12 +267,25 @@ test('a delete reaches the other device as a tombstone (SYNC-6)', async () => {
 
 test('a merged doc queues nothing by itself', async () => {
   const server = fakeServer();
-  server.add('u1', 'exercise', 'e1', { name: 'Squat', categoryId: null, type: 'reps', rest: null, archived: false });
+  server.add('u1', 'exercise', 'e1', exerciseData('Squat', { type: 'reps' }));
   const a = device({ server });
   await a.syncer.run();
   assert.deepEqual(names(a.box.doc), ['Squat']);
   assert.deepEqual(loadQueue(a.storage), []);
   assert.equal(a.box.timers.length, 0);
+});
+
+test('a record of version 1 gets the defaults of version 2, and the server gets them too (TRN-2)', async () => {
+  const server = fakeServer();
+  server.add('u1', 'exercise', 'e1', { name: 'Squat', categoryId: null, type: 'reps', rest: null, archived: false });
+  server.add('u1', 'body', 'b1', { date: '2026-10-01', measure: 'weight', value: 80, unit: 'kg' });
+  const a = device({ server });
+  await a.syncer.run();
+  assert.deepEqual(a.box.doc.exercises, [exercise('e1', 'Squat', { type: 'reps' })]);
+  assert.deepEqual(a.box.doc.bodies, [{ id: 'b1', date: '2026-10-01', measure: 'weight', value: 80, unit: 'kg' }]);
+  assert.deepEqual(loadQueue(a.storage).map((c) => `${c.op} ${c.kind}:${c.key}`), ['upsert exercise:e1']);
+  await a.syncer.run();
+  assert.deepEqual(server.live('u1').find((row) => row.key === 'e1').data, exerciseData('Squat', { type: 'reps' }));
 });
 
 test('run stops at a network error and keeps what was not sent (SYNC-8)', async () => {
@@ -376,7 +398,7 @@ test('a pulled record that the check refuses is dropped and logged; the others g
   t.mock.method(console, 'error', () => {});
   const server = fakeServer();
   server.add('u1', 'exercise', 'bad', { name: '', type: 'reps' });
-  server.add('u1', 'exercise', 'e1', { name: 'Squat', categoryId: null, type: 'reps', rest: null, archived: false });
+  server.add('u1', 'exercise', 'e1', exerciseData('Squat', { type: 'reps' }));
   server.add('u1', 'note', 'n1', { text: 'x' });
   const a = device({ server });
   assert.equal(await a.syncer.run(), 'ok');
@@ -580,7 +602,7 @@ test('start syncs, then opens the stream; an event and a reconnect start a sync'
   server.add('u1', 'category', 'c1', { name: 'Legs' });
   await stream.onChange({});
   await a.syncer.run();
-  assert.deepEqual(a.box.doc.categories, [{ id: 'c1', name: 'Legs' }]);
+  assert.deepEqual(a.box.doc.categories, [{ id: 'c1', name: 'Legs', weekMin: null, weekMax: null }]);
   const pulls = a.client.calls.filter((c) => c === 'pull').length;
   await stream.onReconnect();
   await a.syncer.run();
@@ -641,7 +663,7 @@ test('a session that waits for approval opens no stream and makes no request for
 
 test('the first login merges the local doc into the account (SYNC-12)', async () => {
   const server = fakeServer();
-  server.add('u1', 'exercise', 'k1', { name: 'Row', categoryId: null, type: 'reps', rest: null, archived: false });
+  server.add('u1', 'exercise', 'k1', exerciseData('Row', { type: 'reps' }));
   const a = device({ server, session: null, doc: withExercises([exercise('e1', 'Squat')]) });
   assert.equal(await a.syncer.login(sessionOf('u1')), 'synced');
   assert.deepEqual(names(a.box.doc), ['Row', 'Squat']);
@@ -652,26 +674,26 @@ test('the first login merges the local doc into the account (SYNC-12)', async ()
 
 test('the first login of a device with the default settings keeps the settings of the account', async () => {
   const server = fakeServer();
-  server.add('u1', 'settings', 'settings', { unit: 'lb', rest: 45 });
+  server.add('u1', 'settings', 'settings', settingsOf({ unit: 'lb', rest: 45 }));
   const a = device({ server, session: null });
   await a.syncer.login(sessionOf('u1'));
-  assert.deepEqual(a.box.doc.settings, { unit: 'lb', rest: 45 });
+  assert.deepEqual(a.box.doc.settings, settingsOf({ unit: 'lb', rest: 45 }));
   assert.equal(server.rows.length, 1);
-  assert.deepEqual(server.rows[0].data, { unit: 'lb', rest: 45 });
+  assert.deepEqual(server.rows[0].data, settingsOf({ unit: 'lb', rest: 45 }));
 });
 
 test('the first login sends local settings that are not the defaults: the device wins', async () => {
   const server = fakeServer();
-  server.add('u1', 'settings', 'settings', { unit: 'lb', rest: 45 });
-  const a = device({ server, session: null, doc: { ...emptyTraining(), settings: { unit: 'kg', rest: 30 } } });
+  server.add('u1', 'settings', 'settings', settingsOf({ unit: 'lb', rest: 45 }));
+  const a = device({ server, session: null, doc: { ...emptyTraining(), settings: settingsOf({ unit: 'kg', rest: 30 }) } });
   await a.syncer.login(sessionOf('u1'));
-  assert.deepEqual(a.box.doc.settings, { unit: 'kg', rest: 30 });
-  assert.deepEqual(server.rows[0].data, { unit: 'kg', rest: 30 });
+  assert.deepEqual(a.box.doc.settings, settingsOf({ unit: 'kg', rest: 30 }));
+  assert.deepEqual(server.rows[0].data, settingsOf({ unit: 'kg', rest: 30 }));
 });
 
 test('an entity on both sides keeps the copy of the device (SYNC-12)', async () => {
   const server = fakeServer();
-  server.add('u1', 'exercise', 'e1', { name: 'Squat', categoryId: null, type: 'weight_reps', rest: 30, archived: false });
+  server.add('u1', 'exercise', 'e1', exerciseData('Squat', { rest: 30 }));
   const a = device({ server, session: null, doc: withExercises([exercise('e1', 'Squat', { rest: 90 })]) });
   await a.syncer.login(sessionOf('u1'));
   assert.equal(a.box.doc.exercises[0].rest, 90);
@@ -717,7 +739,7 @@ test('another user with a queue: the export is offered, then the device clears a
   assert.equal(await a.syncer.login(sessionOf('u2')), 'synced');
   assert.deepEqual(a.box.exports, [doc]);
   assert.deepEqual(a.box.doc.exercises, []);
-  assert.deepEqual(a.box.doc.categories, [{ id: 'c9', name: 'Back' }]);
+  assert.deepEqual(a.box.doc.categories, [{ id: 'c9', name: 'Back', weekMin: null, weekMax: null }]);
   assert.equal(loadSyncState(a.storage).owner, 'u2');
   assert.equal(loadSession(a.storage).user.id, 'u2');
   assert.equal(a.storage.getItem(`${APP_SLUG}.theme`), 'dark');
@@ -777,7 +799,7 @@ test('start resumes a login that the app left at the export offer', async () => 
   assert.equal(await again.syncer.start(), 'ok');
   assert.deepEqual(again.client.calls.slice(0, 1), ['refresh']);
   assert.equal(again.box.exports.length, 1);
-  assert.deepEqual(again.box.doc.categories, [{ id: 'c9', name: 'Back' }]);
+  assert.deepEqual(again.box.doc.categories, [{ id: 'c9', name: 'Back', weekMin: null, weekMax: null }]);
   assert.equal(loadSyncState(again.storage).owner, 'u2');
 });
 
@@ -851,7 +873,7 @@ test('a logout during a run in progress leaves the storage cleared, and the stal
   assert.deepEqual(a.storage.keys(), []);
   assert.deepEqual(a.box.doc, emptyTraining());
   assert.equal(await a.syncer.login(sessionOf('u2')), 'synced');
-  assert.deepEqual(a.box.doc.categories, [{ id: 'c9', name: 'Back' }]);
+  assert.deepEqual(a.box.doc.categories, [{ id: 'c9', name: 'Back', weekMin: null, weekMax: null }]);
   assert.equal(loadSyncState(a.storage).owner, 'u2');
 });
 
