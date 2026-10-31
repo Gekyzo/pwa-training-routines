@@ -109,6 +109,16 @@ The domain of the app: exercises, routines and workouts. Its pure modules are `s
 - **RT-3** The day that a routine offers next is the day after the day of its newest workout, in
   a cycle; with no workout, or when the day of each of its workouts is gone, its first day. It
   does not depend on the calendar, so a missed day does not break the cycle.
+- **RT-5** **Duplicate** copies a routine with new ids for it, its days and its items. The copy is
+  not archived, has the time of the copy as `created`, and the name `<name> (2)`, `(3)` and so on:
+  the first that no routine has, with no regard to case, within 60 characters. **Archive** hides a
+  routine from Next day and Today; **Restore** shows it again. Its workouts stay.
+- **RT-7** A day has weekdays: unique whole numbers from 0 (Monday) to 6 (Sunday), kept sorted
+  (`error.weekday` for another value). **Today** lists the days of the routines not archived that
+  have the local weekday of now, in the order of the routines, then of the days.
+- **RT-8** A template is a routine of 2 or 3 days of 4 to 6 items from the common exercises (EX-4):
+  Full body, Upper / Lower and Push / Pull / Legs. Adding one adds the common exercises that the doc
+  lacks first. The names come from the catalog. A name that a routine has gets the suffix of RT-5.
 
 ## Workouts
 

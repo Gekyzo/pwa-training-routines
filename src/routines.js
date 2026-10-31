@@ -1,4 +1,5 @@
-import { checkName, checkNumber, nameTaken, findById } from '#training';
+import { checkName, checkNumber, nameTaken, findById, sortedRoutines, MAX_NAME } from '#training';
+import { seedExercises, seedExerciseId } from '#exercises';
 
 // Routines, their days and the items of a day (RT-1).
 
@@ -43,7 +44,7 @@ const checkRoutineName = (state, name, id = null) => {
 export const addRoutine = (state, name, now, id = crypto.randomUUID()) => {
   const { clean, error } = checkRoutineName(state, name);
   if (error) return { state, error };
-  return { state: { ...state, routines: [...state.routines, { id, name: clean, created: now.toISOString(), days: [] }] } };
+  return { state: { ...state, routines: [...state.routines, { id, name: clean, created: now.toISOString(), archived: false, days: [] }] } };
 };
 
 export const renameRoutine = (state, id, name) => {
@@ -71,7 +72,7 @@ export const addDay = (state, routineId, name, id = crypto.randomUUID()) => {
   if (missing) return missing;
   const { clean, error } = checkDayName(routine, name);
   if (error) return { state, error };
-  return withDays(state, routineId, (days) => [...days, { id, name: clean, items: [] }]);
+  return withDays(state, routineId, (days) => [...days, { id, name: clean, weekdays: [], items: [] }]);
 };
 
 export const renameDay = (state, routineId, dayId, name) => {
@@ -120,7 +121,7 @@ export const addItem = (state, routineId, dayId, input, id = crypto.randomUUID()
   if (missing) return missing;
   const { fields, error } = checkItem(state, input);
   if (error) return { state, error };
-  return withItems(state, routineId, dayId, (items) => [...items, { id, ...fields }]);
+  return withItems(state, routineId, dayId, (items) => [...items, { id, ...fields, rule: null }]);
 };
 
 export const editItem = (state, routineId, dayId, itemId, input) => {
@@ -129,7 +130,7 @@ export const editItem = (state, routineId, dayId, itemId, input) => {
   if (!findById(day.items, itemId)) return itemMissing(state);
   const { fields, error } = checkItem(state, input);
   if (error) return { state, error };
-  return withItems(state, routineId, dayId, (items) => items.map((i) => (i.id === itemId ? { id: itemId, ...fields } : i)));
+  return withItems(state, routineId, dayId, (items) => items.map((i) => (i.id === itemId ? { id: itemId, ...fields, rule: i.rule ?? null } : i)));
 };
 
 export const deleteItem = (state, routineId, dayId, itemId) => {
@@ -144,4 +145,121 @@ export const moveItem = (state, routineId, dayId, itemId, index) => {
   if (error) return error;
   if (!findById(day.items, itemId)) return itemMissing(state);
   return withItems(state, routineId, dayId, (items) => moveIn(items, itemId, index));
+};
+
+// RT-5: the first name `<base> (n)`, n from 2, that no routine has, with no regard to case. The base
+// is cut so that the name stays within the limit.
+const freeName = (state, base) => {
+  if (!nameTaken(state.routines, base)) return base;
+  for (let n = 2; ; n += 1) {
+    const suffix = ` (${n})`;
+    const name = `${base.slice(0, MAX_NAME - suffix.length).trimEnd()}${suffix}`;
+    if (!nameTaken(state.routines, name)) return name;
+  }
+};
+
+// RT-5: a copy with new ids for the routine, its days and its items; the workouts stay with the original.
+export const duplicateRoutine = (state, routineId, now, id = crypto.randomUUID(), newId = crypto.randomUUID) => {
+  const source = findById(state.routines, routineId);
+  if (!source) return routineMissing(state);
+  const copy = {
+    id,
+    name: freeName(state, source.name),
+    created: now.toISOString(),
+    archived: false,
+    days: source.days.map((day) => ({
+      ...day,
+      id: newId(),
+      weekdays: [...day.weekdays],
+      items: day.items.map((item) => ({ ...structuredClone(item), id: newId() })),
+    })),
+  };
+  return { state: { ...state, routines: [...state.routines, copy] } };
+};
+
+// RT-5: an archived routine leaves Next day and Today and stays in the doc.
+export const archiveRoutine = (state, id, archived = true) => {
+  if (!findById(state.routines, id)) return routineMissing(state);
+  return withRoutine(state, id, (r) => ({ ...r, archived }));
+};
+
+// The routines that Next day and Today offer.
+export const activeRoutines = (state) => sortedRoutines(state).filter((r) => !r.archived);
+
+// RT-7: the weekdays of a day, 0 = Monday to 6 = Sunday, without repeats, sorted.
+export const setWeekdays = (state, routineId, dayId, weekdays) => {
+  const { error: missing } = locate(state, routineId, dayId);
+  if (missing) return missing;
+  if (!Array.isArray(weekdays) || !weekdays.every((w) => Number.isInteger(w) && w >= 0 && w <= 6)) {
+    return { state, error: { key: 'error.weekday' } };
+  }
+  const clean = [...new Set(weekdays)].sort((a, b) => a - b);
+  return withDays(state, routineId, (days) => days.map((d) => (d.id === dayId ? { ...d, weekdays: clean } : d)));
+};
+
+// RT-7: the days of the routines not archived that have the local weekday of `now`.
+export const todayDays = (state, now) => {
+  const weekday = (now.getDay() + 6) % 7;
+  return activeRoutines(state).flatMap((routine) =>
+    routine.days.filter((day) => day.weekdays.includes(weekday)).map((day) => ({ routine, day })));
+};
+
+// RT-8: a day is a list of [seed slug, sets, reps, top of the range or null].
+const compound = (slug) => [slug, 3, 5, null];
+const accessory = (slug) => [slug, 3, 8, 12];
+export const TEMPLATES = [
+  {
+    id: 'full-body',
+    days: [
+      [compound('squat'), compound('bench-press'), accessory('barbell-row'), accessory('lateral-raise'), accessory('crunch')],
+      [compound('deadlift'), compound('overhead-press'), accessory('lat-pulldown'), accessory('lunge'), accessory('dumbbell-curl')],
+      [compound('squat'), accessory('incline-dumbbell-press'), accessory('seated-cable-row'), accessory('romanian-deadlift'), accessory('triceps-pushdown')],
+    ],
+  },
+  {
+    id: 'upper-lower',
+    days: [
+      [compound('bench-press'), accessory('barbell-row'), compound('overhead-press'), accessory('lat-pulldown'), accessory('dumbbell-curl'), accessory('triceps-pushdown')],
+      [compound('squat'), accessory('romanian-deadlift'), accessory('leg-press'), accessory('leg-curl'), accessory('calf-raise')],
+    ],
+  },
+  {
+    id: 'push-pull-legs',
+    days: [
+      [compound('bench-press'), compound('overhead-press'), accessory('incline-dumbbell-press'), accessory('lateral-raise'), accessory('triceps-pushdown')],
+      [compound('deadlift'), accessory('barbell-row'), accessory('lat-pulldown'), accessory('face-pull'), accessory('barbell-curl')],
+      [compound('squat'), accessory('romanian-deadlift'), accessory('leg-press'), accessory('leg-curl'), accessory('calf-raise')],
+    ],
+  },
+];
+
+// RT-8: adds the routine of a template, with the seed exercises that the doc lacks (EX-4). `texts(key)`
+// gives `template.<id>.name`, `template.<id>.day.<n>` and the seed names, as `seedExercises` takes.
+export const addTemplate = (state, templateId, texts, now, newId = crypto.randomUUID) => {
+  const template = TEMPLATES.find((t) => t.id === templateId);
+  if (!template) return { state, error: { key: 'error.templateMissing' } };
+  const { state: seeded } = seedExercises(state, texts);
+  const exerciseOf = (slug) => {
+    const byId = findById(seeded.exercises, seedExerciseId(slug));
+    if (byId) return byId.id;
+    // A seed skipped for a name that the user's exercise has: that exercise stands in.
+    const name = texts(`seed.exercise.${slug}`).trim().toLowerCase();
+    return seeded.exercises.find((e) => e.name.trim().toLowerCase() === name)?.id ?? null;
+  };
+  const days = [];
+  for (const [index, items] of template.days.entries()) {
+    const { clean, error } = checkName(texts(`template.${templateId}.day.${index + 1}`));
+    if (error) return { state, error };
+    const built = [];
+    for (const [slug, sets, reps, repsMax] of items) {
+      const exerciseId = exerciseOf(slug);
+      if (exerciseId === null) return { state, error: { key: 'error.exerciseMissing' } };
+      built.push({ id: newId(), exerciseId, sets, reps, repsMax, weight: null, rest: null, rule: null });
+    }
+    days.push({ id: newId(), name: clean, weekdays: [], items: built });
+  }
+  const { clean: base, error } = checkName(texts(`template.${templateId}.name`));
+  if (error) return { state, error };
+  const routine = { id: newId(), name: freeName(seeded, base), created: now.toISOString(), archived: false, days };
+  return { state: { ...seeded, routines: [...seeded.routines, routine] } };
 };

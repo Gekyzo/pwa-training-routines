@@ -19,7 +19,7 @@
 | `src/install.js` | The install offer state machine | nothing |
 | `src/training.js` | The doc of the app, its validation, its orders, the settings and the shared checks (TRN-1 to TRN-6) | `config` |
 | `src/exercises.js` | Categories and exercises, and the common exercises (EX-1 to EX-8) | `training` |
-| `src/routines.js` | Routines, their days and their items (RT-1) | `training` |
+| `src/routines.js` | Routines, their days and their items, copies, weekdays and templates (RT-1, RT-5, RT-7, RT-8) | `exercises`, `training` |
 | `src/workouts.js` | Workouts: the start, the sets, the finish, the next day and the history (RT-3, WO-1 to WO-10) | `training` |
 | `src/units.js` | The conversion of a weight between kg and lb, and the clock text (PR-8) | nothing |
 | `src/bests.js` | The personal records of an exercise (PR-1) | `training`, `units` |
