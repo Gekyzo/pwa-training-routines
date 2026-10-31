@@ -59,3 +59,14 @@ test('a weight of zero makes no heaviest record', () => {
   assert.equal(bests.heaviest, undefined);
   assert.equal(bests.mostReps.value, 10);
 });
+
+test('weight_time and weight_distance have records (PR-1)', () => {
+  const time = bestsOf(state([workout('w1', '2026-10-01', [set('a', 40, null, { seconds: 30 }), set('b', 20, null, { seconds: 90 })])], 'weight_time'), 'bench');
+  assert.deepEqual(Object.keys(time), RECORDS.weight_time);
+  assert.equal(time.heaviest.set.id, 'a');
+  assert.equal(time.longest.set.id, 'b');
+  const distance = bestsOf(state([workout('w1', '2026-10-01', [set('a', 60, null, { meters: 20 }), set('b', 40, null, { meters: 50 })])], 'weight_distance'), 'bench');
+  assert.deepEqual(Object.keys(distance), RECORDS.weight_distance);
+  assert.equal(distance.heaviest.set.id, 'a');
+  assert.equal(distance.farthest.set.id, 'b');
+});

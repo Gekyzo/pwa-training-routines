@@ -143,10 +143,11 @@ export const editSet = (state, workoutId, entryId, setId, input) => {
   return withSets(state, workoutId, entryId, (sets) => sets.map((s) => (s.id === setId ? next : s)));
 };
 
-// WO-5: a set is done when its type has its values: reps, seconds, or meters or seconds.
+// WO-5: a set is done when its type has its values: reps, seconds, meters, or meters or seconds.
 const complete = (type, set) => {
   if (type === 'weight_reps' || type === 'reps') return set.reps !== null;
-  if (type === 'time') return set.seconds !== null;
+  if (type === 'time' || type === 'weight_time') return set.seconds !== null;
+  if (type === 'weight_distance') return set.meters !== null;
   return set.meters !== null || set.seconds !== null;
 };
 

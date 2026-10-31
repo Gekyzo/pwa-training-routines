@@ -9,6 +9,8 @@ export const RECORDS = {
   reps: ['mostReps', 'bestWorkout'],
   time: ['longest'],
   distance_time: ['farthest', 'longest'],
+  weight_time: ['heaviest', 'longest'],
+  weight_distance: ['heaviest', 'farthest'],
 };
 
 // The value of a set for one record, comparable across units (weights in kg).

@@ -1,6 +1,6 @@
-import { TYPES, checkName, checkNumber, nameTaken, findById } from '#training';
+import { TYPES, EQUIPMENT, checkName, checkNumber, checkComment, nameTaken, findById } from '#training';
 
-// Categories and exercises (EX-1 to EX-6).
+// Categories and exercises (EX-1 to EX-8).
 
 const categoryMissing = (state) => ({ state, error: { key: 'error.categoryMissing' } });
 const exerciseMissing = (state) => ({ state, error: { key: 'error.exerciseMissing' } });
@@ -37,16 +37,36 @@ export const deleteCategory = (state, id) => {
   return { state: { ...state, categories: state.categories.filter((c) => c.id !== id) } };
 };
 
-// The clean fields of an exercise, or an error. `rest` is optional: empty uses the default rest.
-const checkExercise = (state, { name, categoryId = null, type, rest = null }, id = null) => {
+// The clean fields of an exercise, or an error. `rest`, `increment` and `bar` are optional: empty uses
+// the default of the settings. On an edit (`current` given) a field that `input` leaves out keeps its value.
+// EX-5: `unit` is the unit of the settings whenever the input names an increment or a bar.
+const checkExercise = (state, input, id = null, current = null) => {
+  const pick = (key, fallback) => (key in input ? input[key] : current?.[key] ?? fallback);
+  const { name, type } = input;
   const { clean, error } = checkName(name);
   if (error) return { error };
   if (nameTaken(state.exercises, clean, id)) return { error: { key: 'error.exerciseTaken' } };
   if (!TYPES.includes(type)) return { error: { key: 'error.exerciseType' } };
+  const categoryId = pick('categoryId', null);
   if (categoryId !== null && !findById(state.categories, categoryId)) return { error: { key: 'error.categoryMissing' } };
-  const restValue = checkNumber('rest', rest, { optional: true });
-  if (restValue.error) return { error: restValue.error };
-  return { fields: { name: clean, categoryId, type, rest: restValue.value } };
+  const numbers = {};
+  for (const key of ['rest', 'increment', 'bar']) {
+    const result = checkNumber(key, pick(key, null), { optional: true });
+    if (result.error) return { error: result.error };
+    numbers[key] = result.value;
+  }
+  const equipment = pick('equipment', null);
+  if (equipment !== null && !EQUIPMENT.includes(equipment)) return { error: { key: 'error.equipment' } };
+  const notes = checkComment(pick('notes', ''));
+  if (notes.error) return { error: notes.error };
+  const unit = 'increment' in input || 'bar' in input
+    ? (numbers.increment !== null || numbers.bar !== null ? state.settings.unit : null)
+    : current?.unit ?? null;
+  return {
+    fields: {
+      name: clean, categoryId, type, ...numbers, unit, equipment, notes: notes.clean, unilateral: pick('unilateral', false) === true,
+    },
+  };
 };
 
 export const addExercise = (state, input, id = crypto.randomUUID()) => {
@@ -59,10 +79,41 @@ export const addExercise = (state, input, id = crypto.randomUUID()) => {
 export const editExercise = (state, id, input) => {
   const exercise = findById(state.exercises, id);
   if (!exercise) return exerciseMissing(state);
-  const { fields, error } = checkExercise(state, input, id);
+  const { fields, error } = checkExercise(state, input, id, exercise);
   if (error) return { state, error };
   if (fields.type !== exercise.type && usedInWorkouts(state, id)) return { state, error: { key: 'error.typeLocked' } };
   return { state: { ...state, exercises: state.exercises.map((e) => (e.id === id ? { ...e, ...fields } : e)) } };
+};
+
+// EX-7: moves the entries, the routine items and the goals of `dropId` to `keepId`, then removes
+// `dropId`. The types must match (`error.typeMismatch`); the same id twice is `error.mergeSame`.
+// The records need no work: they derive from the entries (PR-1).
+export const mergeExercises = (state, keepId, dropId) => {
+  if (!findById(state.exercises, keepId) || !findById(state.exercises, dropId)) return exerciseMissing(state);
+  if (keepId === dropId) return { state, error: { key: 'error.mergeSame' } };
+  if (findById(state.exercises, keepId).type !== findById(state.exercises, dropId).type) {
+    return { state, error: { key: 'error.typeMismatch' } };
+  }
+  const move = (value) => (value === dropId ? keepId : value);
+  return {
+    state: {
+      ...state,
+      exercises: state.exercises.filter((e) => e.id !== dropId),
+      routines: state.routines.map((routine) => ({
+        ...routine,
+        days: routine.days.map((day) => ({ ...day, items: day.items.map((item) => ({ ...item, exerciseId: move(item.exerciseId) })) })),
+      })),
+      workouts: state.workouts.map((workout) => ({
+        ...workout,
+        entries: workout.entries.map((entry) => ({
+          ...entry,
+          exerciseId: move(entry.exerciseId),
+          ...('substituteFor' in entry ? { substituteFor: move(entry.substituteFor) } : {}),
+        })),
+      })),
+      goals: state.goals.map((goal) => ({ ...goal, exerciseId: move(goal.exerciseId) })),
+    },
+  };
 };
 
 // EX-6: an exercise with history is archived, not deleted; one in a routine leaves the routine first.
@@ -82,36 +133,37 @@ export const canDeleteExercise = (state, id) => !usedInWorkouts(state, id) && !u
 
 // EX-4: the common exercises. Fixed ids, so two devices that add them make no duplicate after a sync.
 export const SEED_CATEGORIES = ['chest', 'back', 'legs', 'shoulders', 'arms', 'core', 'cardio'];
+// [slug, category, type, equipment]
 export const SEED_EXERCISES = [
-  ['bench-press', 'chest', 'weight_reps'],
-  ['incline-dumbbell-press', 'chest', 'weight_reps'],
-  ['dumbbell-fly', 'chest', 'weight_reps'],
-  ['push-up', 'chest', 'reps'],
-  ['deadlift', 'back', 'weight_reps'],
-  ['barbell-row', 'back', 'weight_reps'],
-  ['pull-up', 'back', 'reps'],
-  ['lat-pulldown', 'back', 'weight_reps'],
-  ['seated-cable-row', 'back', 'weight_reps'],
-  ['squat', 'legs', 'weight_reps'],
-  ['romanian-deadlift', 'legs', 'weight_reps'],
-  ['leg-press', 'legs', 'weight_reps'],
-  ['lunge', 'legs', 'weight_reps'],
-  ['leg-curl', 'legs', 'weight_reps'],
-  ['leg-extension', 'legs', 'weight_reps'],
-  ['calf-raise', 'legs', 'weight_reps'],
-  ['overhead-press', 'shoulders', 'weight_reps'],
-  ['lateral-raise', 'shoulders', 'weight_reps'],
-  ['face-pull', 'shoulders', 'weight_reps'],
-  ['barbell-curl', 'arms', 'weight_reps'],
-  ['dumbbell-curl', 'arms', 'weight_reps'],
-  ['triceps-pushdown', 'arms', 'weight_reps'],
-  ['dip', 'arms', 'reps'],
-  ['plank', 'core', 'time'],
-  ['crunch', 'core', 'reps'],
-  ['hanging-leg-raise', 'core', 'reps'],
-  ['running', 'cardio', 'distance_time'],
-  ['cycling', 'cardio', 'distance_time'],
-  ['rowing', 'cardio', 'distance_time'],
+  ['bench-press', 'chest', 'weight_reps', 'barbell'],
+  ['incline-dumbbell-press', 'chest', 'weight_reps', 'dumbbell'],
+  ['dumbbell-fly', 'chest', 'weight_reps', 'dumbbell'],
+  ['push-up', 'chest', 'reps', 'bodyweight'],
+  ['deadlift', 'back', 'weight_reps', 'barbell'],
+  ['barbell-row', 'back', 'weight_reps', 'barbell'],
+  ['pull-up', 'back', 'reps', 'bodyweight'],
+  ['lat-pulldown', 'back', 'weight_reps', 'cable'],
+  ['seated-cable-row', 'back', 'weight_reps', 'cable'],
+  ['squat', 'legs', 'weight_reps', 'barbell'],
+  ['romanian-deadlift', 'legs', 'weight_reps', 'barbell'],
+  ['leg-press', 'legs', 'weight_reps', 'machine'],
+  ['lunge', 'legs', 'weight_reps', 'dumbbell'],
+  ['leg-curl', 'legs', 'weight_reps', 'machine'],
+  ['leg-extension', 'legs', 'weight_reps', 'machine'],
+  ['calf-raise', 'legs', 'weight_reps', 'machine'],
+  ['overhead-press', 'shoulders', 'weight_reps', 'barbell'],
+  ['lateral-raise', 'shoulders', 'weight_reps', 'dumbbell'],
+  ['face-pull', 'shoulders', 'weight_reps', 'cable'],
+  ['barbell-curl', 'arms', 'weight_reps', 'barbell'],
+  ['dumbbell-curl', 'arms', 'weight_reps', 'dumbbell'],
+  ['triceps-pushdown', 'arms', 'weight_reps', 'cable'],
+  ['dip', 'arms', 'reps', 'bodyweight'],
+  ['plank', 'core', 'time', 'bodyweight'],
+  ['crunch', 'core', 'reps', 'bodyweight'],
+  ['hanging-leg-raise', 'core', 'reps', 'bodyweight'],
+  ['running', 'cardio', 'distance_time', 'other'],
+  ['cycling', 'cardio', 'distance_time', 'machine'],
+  ['rowing', 'cardio', 'distance_time', 'machine'],
 ];
 
 export const seedCategoryId = (slug) => `seed-cat-${slug}`;
@@ -127,12 +179,15 @@ export const seedExercises = (state, nameOf) => {
     if (!findById(categories, id) && !nameTaken(categories, name)) categories.push({ id, name });
   }
   const exercises = [...state.exercises];
-  for (const [slug, category, type] of SEED_EXERCISES) {
+  for (const [slug, category, type, equipment] of SEED_EXERCISES) {
     const id = seedExerciseId(slug);
     const name = nameOf(`seed.exercise.${slug}`);
     if (findById(exercises, id) || nameTaken(exercises, name)) continue;
     const categoryId = findById(categories, seedCategoryId(category)) ? seedCategoryId(category) : null;
-    exercises.push({ id, name, categoryId, type, rest: null, archived: false });
+    exercises.push({
+      id, name, categoryId, type, rest: null, archived: false,
+      increment: null, bar: null, unit: null, equipment, notes: '', unilateral: false,
+    });
   }
   return { state: { ...state, categories, exercises } };
 };

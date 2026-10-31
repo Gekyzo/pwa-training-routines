@@ -9,6 +9,7 @@ import {
   editExercise,
   deleteExercise,
   archiveExercise,
+  mergeExercises,
   canDeleteExercise,
   seedExercises,
   SEED_CATEGORIES,
@@ -55,7 +56,10 @@ test('a category in use is not deleted (EX-3)', () => {
 
 test('an exercise is added with its type, an optional rest and no archive', () => {
   const { state } = addExercise(withExercise(), { name: 'Plank', categoryId: null, type: 'time', rest: '' }, 'e2');
-  assert.deepEqual(state.exercises.at(-1), { id: 'e2', name: 'Plank', categoryId: null, type: 'time', rest: null, archived: false });
+  assert.deepEqual(state.exercises.at(-1), {
+    id: 'e2', name: 'Plank', categoryId: null, type: 'time', rest: null, archived: false,
+    increment: null, bar: null, unit: null, equipment: null, notes: '', unilateral: false,
+  });
   assert.notEqual(normalizeTraining(state), null);
 });
 
@@ -110,4 +114,83 @@ test('the seed skips a name that the user already has', () => {
   const seeded = seedExercises(state, (key) => key.split('.').at(-1)).state;
   assert.equal(seeded.exercises.filter((e) => e.name.toLowerCase() === 'squat').length, 1);
   assert.notEqual(normalizeTraining(seeded), null);
+});
+
+test('an exercise takes increment, bar, equipment, notes and unilateral (EX-5, EX-8)', () => {
+  const state = { ...withExercise(), settings: { ...emptyTraining().settings, unit: 'lb' } };
+  const next = addExercise(state, {
+    name: 'Row', type: 'weight_reps', increment: '2.5', bar: 45, equipment: 'barbell', notes: ' keep flat ', unilateral: true,
+  }, 'e2').state.exercises.at(-1);
+  assert.deepEqual(
+    [next.increment, next.bar, next.unit, next.equipment, next.notes, next.unilateral],
+    [2.5, 45, 'lb', 'barbell', 'keep flat', true],
+  );
+  const plain = addExercise(state, { name: 'Dip', type: 'reps' }, 'e3').state.exercises.at(-1);
+  assert.deepEqual([plain.increment, plain.bar, plain.unit, plain.equipment, plain.notes, plain.unilateral], [null, null, null, null, '', false]);
+});
+
+test('an exercise refuses bad equipment, long notes and an increment out of range', () => {
+  const state = withExercise();
+  const input = { name: 'X', type: 'reps' };
+  assert.equal(addExercise(state, { ...input, equipment: 'sofa' }).error.key, 'error.equipment');
+  assert.equal(addExercise(state, { ...input, notes: 'a'.repeat(501) }).error.key, 'error.commentTooLong');
+  assert.equal(addExercise(state, { ...input, increment: 0 }).error.key, 'error.numberRange');
+  assert.equal(addExercise(state, { ...input, bar: 101 }).error.key, 'error.numberRange');
+});
+
+test('an edit keeps the fields that its input leaves out, and clears the unit with the increment', () => {
+  const start = addExercise(withExercise(), { name: 'Row', type: 'weight_reps', increment: 5, equipment: 'cable' }, 'e2').state;
+  const renamed = editExercise(start, 'e2', { name: 'Row 2', type: 'weight_reps' }).state.exercises.at(-1);
+  assert.deepEqual([renamed.increment, renamed.unit, renamed.equipment], [5, 'kg', 'cable']);
+  const cleared = editExercise(start, 'e2', { name: 'Row', type: 'weight_reps', increment: '' }).state.exercises.at(-1);
+  assert.deepEqual([cleared.increment, cleared.unit], [null, null]);
+});
+
+test('weight_time and weight_distance are exercise types', () => {
+  assert.ok(addExercise(withExercise(), { name: 'Carry', type: 'weight_distance' }).state);
+  assert.ok(addExercise(withExercise(), { name: 'Hold', type: 'weight_time' }).state);
+});
+
+test('every seed has equipment (EX-8)', () => {
+  const seeded = seedExercises(emptyTraining(), (key) => key).state;
+  assert.ok(seeded.exercises.every((e) => ['barbell', 'dumbbell', 'machine', 'cable', 'bodyweight', 'other'].includes(e.equipment)));
+  assert.equal(seeded.exercises.find((e) => e.id === 'seed-squat').equipment, 'barbell');
+});
+
+const mergeState = () => {
+  const base = withWorkout();
+  return {
+    ...base,
+    exercises: [
+      ...base.exercises,
+      { ...base.exercises[0], id: 'e2', name: 'Bench 2' },
+      { ...base.exercises[0], id: 'e3', name: 'Run', type: 'time' },
+    ],
+    routines: [{ id: 'r1', name: 'R', archived: false, days: [{ id: 'd1', name: 'D', items: [{ id: 'i1', exerciseId: 'e2', sets: 3 }] }] }],
+    workouts: [{
+      ...base.workouts[0],
+      entries: [
+        { id: 'n1', exerciseId: 'e1', sets: [], substituteFor: 'e2' },
+        { id: 'n2', exerciseId: 'e2', sets: [], substituteFor: null },
+      ],
+    }],
+    goals: [{ id: 'g1', kind: 'exercise', exerciseId: 'e2', metric: 'set', weight: 100, unit: 'kg', reps: 5, date: null, created: '2026-10-01' }],
+  };
+};
+
+test('merging moves entries, substitutes, items and goals, and removes the dropped exercise (EX-7)', () => {
+  const { state, error } = mergeExercises(mergeState(), 'e1', 'e2');
+  assert.equal(error, undefined);
+  assert.deepEqual(state.exercises.map((e) => e.id), ['e1', 'e3']);
+  assert.deepEqual(state.workouts[0].entries.map((e) => [e.exerciseId, e.substituteFor]), [['e1', 'e1'], ['e1', null]]);
+  assert.equal(state.routines[0].days[0].items[0].exerciseId, 'e1');
+  assert.equal(state.goals[0].exerciseId, 'e1');
+});
+
+test('merging refuses a type mismatch, the same exercise and a missing one (EX-7)', () => {
+  const state = mergeState();
+  assert.deepEqual(mergeExercises(state, 'e1', 'e3'), { state, error: { key: 'error.typeMismatch' } });
+  assert.deepEqual(mergeExercises(state, 'e1', 'e1'), { state, error: { key: 'error.mergeSame' } });
+  assert.equal(mergeExercises(state, 'e1', 'zz').error.key, 'error.exerciseMissing');
+  assert.equal(mergeExercises(state, 'zz', 'e1').error.key, 'error.exerciseMissing');
 });

@@ -34,6 +34,8 @@ const base = () => ({
     { id: 'squat', name: 'Squat', categoryId: null, type: 'weight_reps', rest: null, archived: false },
     { id: 'plank', name: 'Plank', categoryId: null, type: 'time', rest: null, archived: false },
     { id: 'run', name: 'Run', categoryId: null, type: 'distance_time', rest: null, archived: false },
+    { id: 'hold', name: 'Hold', categoryId: null, type: 'weight_time', rest: null, archived: false },
+    { id: 'carry', name: 'Carry', categoryId: null, type: 'weight_distance', rest: null, archived: false },
   ],
   routines: [
     {
@@ -195,4 +197,18 @@ test('the history of an exercise lists done sets, newest first (WO-10)', () => {
   assert.deepEqual(history[0].sets.map((s) => s.weight), [100, 90]);
   assert.deepEqual(exerciseHistory(state, 'plank'), []);
   assert.deepEqual(previousSets(state, 'squat', 'w1'), []);
+});
+
+test('weight_time needs seconds and weight_distance needs meters to be done (WO-5)', () => {
+  let { state } = startWorkout(base(), DAY1, 'w1');
+  ({ state } = addEntry(state, 'w1', 'hold', 'n1', 's1'));
+  ({ state } = addEntry(state, 'w1', 'carry', 'n2', 's2'));
+  ({ state } = editSet(state, 'w1', 'n1', 's1', { weight: '20' }));
+  ({ state } = editSet(state, 'w1', 'n2', 's2', { weight: '40', seconds: '10' }));
+  assert.equal(markDone(state, 'w1', 'n1', 's1').error.key, 'error.setIncomplete');
+  assert.equal(markDone(state, 'w1', 'n2', 's2').error.key, 'error.setIncomplete');
+  ({ state } = editSet(state, 'w1', 'n1', 's1', { seconds: '30' }));
+  ({ state } = editSet(state, 'w1', 'n2', 's2', { meters: '25' }));
+  assert.equal(markDone(state, 'w1', 'n1', 's1').state.workouts[0].entries[0].sets[0].done, true);
+  assert.equal(markDone(state, 'w1', 'n2', 's2').state.workouts[0].entries[1].sets[0].done, true);
 });

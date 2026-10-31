@@ -81,10 +81,20 @@ The domain of the app: exercises, routines and workouts. Its pure modules are `s
   (`seed-cat-<slug>`, `seed-<slug>`), named in the language of the screen. A seed whose id is in
   the doc, or whose name the doc has, is skipped: a second run, or a run on a second device, adds
   nothing twice.
-- **EX-5** An exercise with no rest of its own rests the default of the settings (TRN-1).
+- **EX-5** An exercise with no rest of its own rests the default of the settings (TRN-1). It can
+  also hold an increment (0.1 to 100) and a bar weight (0 to 100), both optional. `unit` is the
+  unit of the settings at the time the increment or the bar is set.
 - **EX-6** An exercise that a workout holds is not deleted (`error.exerciseInUse`): it is archived,
   and an archived exercise keeps its history and leaves the pickers. An exercise that a routine
   holds is not deleted (`error.exerciseInRoutine`).
+- **EX-7** **Merge** moves the entries of a workout (and their substitute mark), the items of a
+  routine and the goals of exercise B to exercise A, then removes B. The two exercises must exist
+  (`error.exerciseMissing`), must be two (`error.mergeSame`) and must have the same type
+  (`error.typeMismatch`). The records of A come from the entries it has now (PR-1).
+- **EX-8** An exercise has an equipment (`barbell`, `dumbbell`, `machine`, `cable`, `bodyweight`,
+  `other` or none; another value is `error.equipment`), notes of up to 500 characters
+  (`error.commentTooLong`) and a unilateral flag (LOG-10). Each common exercise (EX-4) has its
+  equipment.
 
 ## Routines
 
@@ -111,7 +121,8 @@ The domain of the app: exercises, routines and workouts. Its pure modules are `s
   another field changes nothing. Each value is checked as TRN-4. A weight is in the unit of the
   settings, and the set keeps that unit (PR-8).
 - **WO-5** A set is done only with the values of its type: reps for `weight_reps` and `reps`,
-  seconds for `time`, meters or seconds for `distance_time` (`error.setIncomplete`). Only done sets
+  seconds for `time` and `weight_time`, meters for `weight_distance`, meters or seconds for
+  `distance_time` (`error.setIncomplete`). Only done sets
   count in the history and the records.
 - **WO-6** A workout takes a comment and another date, a past date too (`error.date`).
 - **WO-7** **Finish** drops the sets that are not done and the exercises left with no set. A
@@ -130,7 +141,9 @@ The domain of the app: exercises, routines and workouts. Its pure modules are `s
 - **PR-1** The records of an exercise come from its done sets, at each read; nothing stores them.
   `weight_reps` has the heaviest weight, the most reps, the best set (weight × reps) and the best
   workout (the sum of weight × reps); `reps` has the most reps and the best workout (the sum of
-  reps); `time` the longest time; `distance_time` the farthest distance and the longest time. Each
+  reps); `time` the longest time; `distance_time` the farthest distance and the longest time;
+  `weight_time` the heaviest weight and the longest time; `weight_distance` the heaviest weight
+  and the farthest distance. Each
   record names its set and its workout. A value of zero makes no record, and a tie keeps the first
   record.
 - **PR-8** A set keeps the unit of its weight. Records compare weights in kg. The screen shows a
@@ -154,7 +167,8 @@ The domain of the app: exercises, routines and workouts. Its pure modules are `s
   `error.notBackup`. **Export CSV** writes one
   row for each done set, oldest first, with the columns `Date`, `Exercise`, `Category`, `Weight`,
   `Weight Unit`, `Reps`, `Distance`, `Distance Unit` (`m`), `Time` (`m:ss` or `h:mm:ss`) and
-  `Comment`, quoted as RFC 4180. The file has the name of the JSON export with `.csv`.
+  `Comment`, quoted as RFC 4180. A `weight_time` or `weight_distance` set fills the weight and the
+  time, resp. the distance. The file has the name of the JSON export with `.csv`.
 - **DATA-6** **Delete all data** first asks `reset.exportFirst` when the doc has a workout; a yes
   writes the JSON export before the question of SET-2.
 

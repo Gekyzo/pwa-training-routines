@@ -41,3 +41,20 @@ test('an empty doc gives the header alone', () => {
 test('the CSV file takes the name of the JSON export', () => {
   assert.equal(csvFilename('app-2026-10-31-101500.json'), 'app-2026-10-31-101500.csv');
 });
+
+test('weight_time and weight_distance sets write weight with time or distance (DATA-2)', () => {
+  const doc = {
+    ...emptyTraining(),
+    exercises: [
+      { id: 'h', name: 'Hold', categoryId: null, type: 'weight_time', rest: null, archived: false },
+      { id: 'c', name: 'Carry', categoryId: null, type: 'weight_distance', rest: null, archived: false },
+    ],
+    workouts: [workout('w1', '2026-10-01', [
+      { id: 'e1', exerciseId: 'h', sets: [set('a', { weight: 20, seconds: 75 })] },
+      { id: 'e2', exerciseId: 'c', sets: [set('b', { weight: 40, meters: 30 })] },
+    ])],
+  };
+  const lines = toCsv(doc).split('\r\n');
+  assert.equal(lines[1], '2026-10-01,Hold,,20,kg,,,,1:15,');
+  assert.equal(lines[2], '2026-10-01,Carry,,40,kg,,30,m,,');
+});
