@@ -4,6 +4,10 @@ What changes for you in each version of the app. The newest version is first.
 
 ## Unreleased
 
+No change.
+
+## 0.2.0 - 2026-10-31
+
 - Routines are here: make your days in `Routines`, tap **Start** and log each set in `Workout`. Each new set copies the values of the last time, and a done set starts the rest timer.
 - `Exercises` shows your records and the history of each exercise. **Add common exercises** gives you 29 to start with.
 - Pick kg or lb and the default rest in Settings. **Export CSV** saves your sets for a spreadsheet.

@@ -4,6 +4,10 @@ Lo que cambia para ti en cada versión de la app. La versión más nueva va prim
 
 ## Unreleased
 
+No change.
+
+## 0.2.0 - 2026-10-31
+
 - Llegan las rutinas: crea tus días en `Rutinas`, pulsa **Empezar** y registra cada serie en `Entreno`. Cada serie nueva copia los valores de la última vez, y al marcarla hecha empieza el descanso.
 - `Ejercicios` muestra tus récords y el historial de cada ejercicio. **Añadir ejercicios comunes** te da 29 para empezar.
 - Elige kg o lb y el descanso por defecto en Ajustes. **Exportar CSV** guarda tus series para una hoja de cálculo.
