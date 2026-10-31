@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { searchUrl, parseSearch } from '#wger';
+import { searchUrl, parseSearch, categoryFor } from '#wger';
 
 test('the URL encodes the term and keeps en or es', () => {
   assert.equal(searchUrl('bench press', 'es'), 'https://wger.de/api/v2/exercise/search/?term=bench%20press&language=es');
@@ -31,4 +31,13 @@ test('garbage gives an empty list', () => {
 
 test('a long name is cut to 60 characters', () => {
   assert.equal(parseSearch({ suggestions: [{ data: { name: 'N'.repeat(100), category: 'c' } }] })[0].name.length, 60);
+});
+
+test('categoryFor finds the category of the name with no regard to case or spaces', () => {
+  const categories = [{ id: 'c1', name: 'Chest' }, { id: 'c2', name: ' Legs ' }];
+  assert.equal(categoryFor(categories, 'chest').id, 'c1');
+  assert.equal(categoryFor(categories, 'LEGS').id, 'c2');
+  assert.equal(categoryFor(categories, 'Pecs'), null);
+  assert.equal(categoryFor(categories, ''), null);
+  assert.equal(categoryFor([], 'Chest'), null);
 });

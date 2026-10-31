@@ -207,3 +207,9 @@ test('duplicate and template work with the default ids', () => {
   const t = addTemplate(emptyTraining(), 'full-body', texts, NOW).state;
   assert.equal(t.routines.length, 1);
 });
+
+test('a template gives the id of its new routine', () => {
+  const { state, id } = addTemplate(base(), 'upper-lower', texts, NOW);
+  assert.equal(state.routines.find((r) => r.id === id).name, 'template.upper-lower.name');
+  assert.equal(addTemplate(base(), 'nope', texts, NOW).id, undefined);
+});

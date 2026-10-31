@@ -1,4 +1,5 @@
 import { TYPES, EQUIPMENT, checkName, checkNumber, checkComment, nameTaken, findById } from '#training';
+import { shownWeight } from '#units';
 
 // Categories and exercises (EX-1 to EX-8).
 
@@ -68,6 +69,22 @@ const checkExercise = (state, input, id = null, current = null) => {
     },
   };
 };
+
+// EX-9: the increment and the bar of an exercise as the sheet shows them, in `unit`, one decimal;
+// '' when unset.
+export const defaultsText = (exercise, unit) => {
+  const text = (key) => {
+    const value = exercise?.[key] ?? null;
+    return value === null ? '' : String(shownWeight(value, exercise.unit ?? unit, unit));
+  };
+  return { increment: text('increment'), bar: text('bar') };
+};
+
+// EX-9: the increment and the bar to send from the sheet. On an edit (`editing`), when both texts are
+// as shown they are left out, so that they keep their own unit; else both go, in the unit of the
+// settings (EX-5).
+export const defaultsInput = (shown, values, editing) =>
+  editing && values.increment === shown.increment && values.bar === shown.bar ? {} : { increment: values.increment, bar: values.bar };
 
 export const addExercise = (state, input, id = crypto.randomUUID()) => {
   const { fields, error } = checkExercise(state, input);

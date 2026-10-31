@@ -95,6 +95,10 @@ The domain of the app: exercises, routines and workouts. Its pure modules are `s
   `other` or none; another value is `error.equipment`), notes of up to 500 characters
   (`error.commentTooLong`) and a unilateral flag (LOG-10). Each common exercise (EX-4) has its
   equipment.
+- **EX-9** The sheet of an exercise shows the increment and the bar in the unit of the settings, at
+  one decimal, empty when unset. On an edit, an increment and a bar whose texts the user did not
+  change are not sent, so they keep their own unit; when one changes, both are sent in the unit of
+  the settings (EX-5). A new exercise sends both.
 
 ## Routines
 
@@ -320,8 +324,7 @@ The domain of the app: exercises, routines and workouts. Its pure modules are `s
   (PR-1), the rep maxes (SCR-14) and the history (WO-10). A tap on a workout of the history opens
   it in Workout. The sheet of an exercise has the search of wger (SCR-15), the name, the category
   or a new one, the type, the equipment (EX-8), the rest, the increment and the bar (EX-5) in the
-  unit of the settings, the notes and **One side at a time** (LOG-10). An increment and a bar that
-  the user does not change keep their own unit.
+  unit of the settings (EX-9), the notes and **One side at a time** (LOG-10).
 - **SCR-6** **+** makes an exercise in Exercises. In Routines, **+** and the empty list open a
   sheet with **Empty routine** (a name sheet) and the templates (RT-8), each with its days; a tap
   adds it and opens it. `Escape` closes the sheet, else the open detail, else the past workout.
@@ -358,12 +361,11 @@ The domain of the app: exercises, routines and workouts. Its pure modules are `s
   deload and the deload. Percent has the training max and the weight added each cycle, in the unit
   of the rule (else of the settings), and the weeks as text: one line a week, each set
   `<pct>×<reps>`, a `+` for AMRAP, sets apart by a comma or a semicolon (`x` and `*` also mark the
-  reps; a decimal takes a point). **Fill 5/3/1** writes the four weeks 65/75/85+, 70/80/90+,
+  reps). The reps are whole, so a comma inside a percent is a decimal (`62,5×5`). **Fill 5/3/1** writes the four weeks 65/75/85+, 70/80/90+,
   75/85/95+ and 40/50/60 with the reps 5/5/5+, 3/3/3+, 5/3/1+ and 5/5/5. A text that is not
   valid is `error.ruleWeeks`. An empty failure count or deload takes its default; an empty step
   is 0. Below the target of an item with a rule and a weight, the detail shows the rule and its
-  next target (`Next: 102.5 kg × 5`): the reps of each set of a double plan, and the last set of
-  the week of a percent rule, with its week.
+  next target (PRG-6), as `Next: 102.5 kg × 5`, with the week of a percent rule.
 - **SCR-13** Each day shows its weekdays as seven toggles, Monday first, with the short names of
   the language of the screen. A tap adds or removes that weekday (RT-7).
 - **SCR-14** **Merge into…** shows when another exercise has the same type. It opens a picker of
@@ -373,6 +375,7 @@ The domain of the app: exercises, routines and workouts. Its pure modules are `s
   its date; with no row the group is hidden.
 - **SCR-15** The search of wger (INT-3) shows in the sheet of an exercise only when the browser is
   online at the open. **Search**, or Enter in its box, makes one request; Enter does not save the
-  sheet. The list shows each suggestion with its category. A tap fills the name, and picks the
-  category of that name with no regard to case, else writes it as the new category. A failed
+  sheet, and no search starts while one runs. The list shows each suggestion with its category. A
+  tap fills the name, and picks the category of that name with no regard to case or to the spaces
+  at the ends (`categoryFor`), else writes it as the new category. A failed
   request, or an answer that is not valid, shows `error.wger`.

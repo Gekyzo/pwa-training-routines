@@ -1,11 +1,10 @@
 // The Exercises section: the exercises by category, and the detail of one with its records and its
 // history (EX-1 to EX-8, PR-1 to PR-3, WO-10, INT-3, SCR-5, SCR-14, SCR-15).
 import { TYPES, EQUIPMENT, findById, sortedCategories, sortedExercises } from '#training';
-import { addCategory, addExercise, editExercise, deleteExercise, archiveExercise, canDeleteExercise, mergeExercises, seedExercises } from '#exercises';
+import { addCategory, addExercise, editExercise, deleteExercise, archiveExercise, canDeleteExercise, mergeExercises, seedExercises, defaultsText, defaultsInput } from '#exercises';
 import { bestsOf, repMaxes, RECORDS } from '#bests';
-import { searchUrl, parseSearch } from '#wger';
+import { searchUrl, parseSearch, categoryFor } from '#wger';
 import { exerciseHistory } from '#workouts';
-import { shownWeight } from '#units';
 import { $, el, ui, state, lang, t, apply, render, showToast } from '#ui/context';
 import { openSheet, closeSheet, field, textInput, numberInput, textArea, selectInput, switchInput } from '#ui/sheet';
 import { setText, typeName, dateText, clock, weightText } from '#ui/format';
@@ -23,15 +22,18 @@ const wgerSearch = ({ name, categoryId, newCategory }) => {
   box.setAttribute('aria-label', t('wger.search'));
   const pick = (suggestion) => {
     name.value = suggestion.name;
-    const category = sortedCategories(state).find((c) => c.name.trim().toLowerCase() === suggestion.category.toLowerCase());
+    const category = categoryFor(state.categories, suggestion.category);
     categoryId.value = category?.id ?? '';
     newCategory.value = category ? '' : suggestion.category;
     results.replaceChildren();
   };
   const go = el('button', { className: 'button tonal', type: 'button', textContent: t('wger.go') });
+  // One request at a time: Enter while one runs does nothing.
+  let busy = false;
   const run = async () => {
     const term = box.value.trim();
-    if (!term) return;
+    if (!term || busy) return;
+    busy = true;
     go.disabled = true;
     try {
       const response = await fetch(searchUrl(term, lang));
@@ -46,6 +48,7 @@ const wgerSearch = ({ name, categoryId, newCategory }) => {
     } catch {
       showToast(t('error.wger'));
     } finally {
+      busy = false;
       go.disabled = false;
     }
   };
@@ -59,18 +62,12 @@ const wgerSearch = ({ name, categoryId, newCategory }) => {
   return [el('div', { className: 'input-row' }, [box, go]), results];
 };
 
-// EX-5: an increment or a bar in the unit of the settings, one decimal.
-const shownOf = (exercise, key) => {
-  const value = exercise?.[key] ?? null;
-  return value === null ? '' : String(shownWeight(value, exercise.unit ?? state.settings.unit, state.settings.unit));
-};
-
-// EX-1, EX-5, EX-8, SCR-14: the sheet of a new exercise, or of `exercise`. A name in New category
-// creates it first. An increment and a bar that the user did not change keep their own unit.
+// EX-1, EX-5, EX-8, EX-9, SCR-5: the sheet of a new exercise, or of `exercise`. A name in New category
+// creates it first.
 export const openExerciseSheet = (exercise = null, { onAdded = null } = {}) => {
   const categories = [['', t('exercises.noCategory')], ...sortedCategories(state).map((c) => [c.id, c.name])];
   const unit = state.settings.unit;
-  const shown = { increment: shownOf(exercise, 'increment'), bar: shownOf(exercise, 'bar') };
+  const shown = defaultsText(exercise, unit);
   const name = textInput('name', exercise?.name ?? '', { labelKey: 'exercises.name' });
   const categoryId = selectInput('categoryId', categories, exercise?.categoryId ?? '');
   const newCategory = textInput('newCategory', '', { labelKey: 'exercises.newCategory' });
@@ -100,7 +97,6 @@ export const openExerciseSheet = (exercise = null, { onAdded = null } = {}) => {
         category = id;
       }
       const id = exercise?.id ?? crypto.randomUUID();
-      const changed = !exercise || values.increment !== shown.increment || values.bar !== shown.bar;
       const input = {
         name: values.name,
         categoryId: category,
@@ -109,7 +105,7 @@ export const openExerciseSheet = (exercise = null, { onAdded = null } = {}) => {
         equipment: values.equipment || null,
         notes: values.notes,
         unilateral: values.unilateral === 'on',
-        ...(changed ? { increment: values.increment, bar: values.bar } : {}),
+        ...defaultsInput(shown, values, Boolean(exercise)),
       };
       const result = exercise ? editExercise(draft, id, input) : addExercise(draft, input, id);
       if (!apply(result)) return false;

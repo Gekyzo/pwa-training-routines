@@ -44,27 +44,28 @@ export const PRESET_531 = [
 // SCR-12: the weeks of a percent rule as text: one line a week, `65×5, 75×5, 85×5+` (`+` is AMRAP).
 export const weeksText = (weeks) => weeks.map((sets) => sets.map((s) => `${s.pct}×${s.reps}${s.amrap ? '+' : ''}`).join(', ')).join('\n');
 
-const SET_TEXT = /^(\d+(?:\.\d+)?)\s*%?\s*[x×*]\s*(\d+)\s*(\+?)$/i;
+const SET = String.raw`(\d+(?:[.,]\d+)?)\s*%?\s*[x×*]\s*(\d+)\s*(\+?)`;
+const LINE = new RegExp(`^${SET}(?:\\s*[,;]\\s*${SET})*$`, 'i');
+const SETS = new RegExp(SET, 'gi');
 
-// SCR-12: the weeks of `weeksText`. A set is `<pct>[%] x|×|* <reps>[+]`, the sets of a line part at a
-// comma or a semicolon, so a decimal takes a point; empty lines are skipped. Else `error.ruleWeeks`.
+// SCR-12: the weeks of `weeksText`. A set is `<pct>[%] x|×|* <reps>[+]`; a comma or a semicolon parts
+// the sets of a line. The reps are whole, so a comma inside a percent (`62,5x5`) is a decimal.
+// Empty lines are skipped. Anything else is `error.ruleWeeks`.
 export const parseWeeks = (text) => {
   const bad = { error: { key: 'error.ruleWeeks' } };
   const lines = String(text ?? '').split('\n').map((line) => line.trim()).filter(Boolean);
   if (!lines.length || lines.length > MAX_RULE_WEEKS) return bad;
   const weeks = [];
   for (const line of lines) {
-    const parts = line.split(/[,;]/).map((part) => part.trim());
-    if (parts.length > MAX_RULE_SETS) return bad;
+    if (!LINE.test(line)) return bad;
     const sets = [];
-    for (const part of parts) {
-      const match = SET_TEXT.exec(part);
-      if (!match) return bad;
-      const pct = checkNumber('pct', match[1]);
-      const reps = checkNumber('pctReps', match[2]);
+    for (const [, pctText, repsText, plus] of line.matchAll(SETS)) {
+      const pct = checkNumber('pct', pctText);
+      const reps = checkNumber('pctReps', repsText);
       if (pct.error || reps.error) return bad;
-      sets.push({ pct: pct.value, reps: reps.value, amrap: match[3] === '+' });
+      sets.push({ pct: pct.value, reps: reps.value, amrap: plus === '+' });
     }
+    if (sets.length > MAX_RULE_SETS) return bad;
     weeks.push(sets);
   }
   return { weeks };
@@ -226,4 +227,23 @@ export const amrapSets = (state, workout) => {
     });
   }
   return ids;
+};
+
+// PRG-6: what the screen shows of the next target of an item with a rule: its weight and unit, its
+// reps as text (each set of a double plan `12/11/10`, the last set of a percent week with `+` for
+// AMRAP, else the reps or the range `5–8`), and the week from 1 for a percent rule. `null` with no
+// rule, no item or no weight.
+export const nextSummary = (state, routineId, dayId, itemId) => {
+  const { item, error } = locate(state, routineId, dayId, itemId);
+  if (error || !item.rule) return null;
+  const next = nextTarget(state, routineId, dayId, itemId);
+  if (next.weight === null) return null;
+  const repsOf = (s) => `${s.reps}${s.amrap ? '+' : ''}`;
+  const percent = item.rule.type === 'percent';
+  let reps;
+  if (percent) reps = repsOf(next.plan.at(-1));
+  else if (next.plan) reps = next.plan.map(repsOf).join('/');
+  else if (next.reps === null) reps = null;
+  else reps = next.repsMax === null ? String(next.reps) : `${next.reps}–${next.repsMax}`;
+  return { type: item.rule.type, weight: next.weight, unit: next.unit, reps, week: percent ? next.state.week + 1 : null };
 };

@@ -15,6 +15,8 @@ import {
   SEED_CATEGORIES,
   SEED_EXERCISES,
   seedExerciseId,
+  defaultsText,
+  defaultsInput,
 } from '#exercises';
 
 const withExercise = () => ({
@@ -193,4 +195,23 @@ test('merging refuses a type mismatch, the same exercise and a missing one (EX-7
   assert.deepEqual(mergeExercises(state, 'e1', 'e1'), { state, error: { key: 'error.mergeSame' } });
   assert.equal(mergeExercises(state, 'e1', 'zz').error.key, 'error.exerciseMissing');
   assert.equal(mergeExercises(state, 'zz', 'e1').error.key, 'error.exerciseMissing');
+});
+
+// ---- EX-9: the increment and the bar of the exercise sheet ----
+
+test('defaultsText shows the increment and the bar in the unit of the settings, empty when unset', () => {
+  assert.deepEqual(defaultsText(null, 'kg'), { increment: '', bar: '' });
+  assert.deepEqual(defaultsText({ increment: 2.5, bar: null, unit: 'kg' }, 'kg'), { increment: '2.5', bar: '' });
+  assert.deepEqual(defaultsText({ increment: 5, bar: 15, unit: 'kg' }, 'lb'), { increment: '11', bar: '33.1' });
+});
+
+test('defaultsInput leaves out an increment and a bar that the user did not change', () => {
+  const shown = { increment: '11', bar: '33.1' };
+  assert.deepEqual(defaultsInput(shown, { increment: '11', bar: '33.1' }, true), {});
+  assert.deepEqual(defaultsInput(shown, { increment: '10', bar: '33.1' }, true), { increment: '10', bar: '33.1' });
+  assert.deepEqual(defaultsInput(shown, { increment: '11', bar: '' }, true), { increment: '11', bar: '' });
+});
+
+test('defaultsInput sends both fields for a new exercise', () => {
+  assert.deepEqual(defaultsInput({ increment: '', bar: '' }, { increment: '', bar: '' }, false), { increment: '', bar: '' });
 });

@@ -24,3 +24,11 @@ export const parseSearch = (json) => {
   }
   return result;
 };
+
+// SCR-15: the category of the doc whose name is `name`, with no regard to case or to the spaces at
+// the ends; `null` when none has it.
+export const categoryFor = (categories, name) => {
+  const wanted = String(name ?? '').trim().toLowerCase();
+  if (!wanted) return null;
+  return categories.find((c) => c.name.trim().toLowerCase() === wanted) ?? null;
+};

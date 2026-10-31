@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { emptyTraining, normalizeTraining } from '#training';
-import { setRule, nextTarget, roundLoad, itemHistory, amrapSets, PRESET_531, weeksText, parseWeeks, ruleFromInput } from '#progression';
+import { setRule, nextTarget, roundLoad, itemHistory, amrapSets, PRESET_531, weeksText, parseWeeks, ruleFromInput, nextSummary } from '#progression';
 import { startFromDay, editSet, markDone, finishWorkout } from '#workouts';
 
 const LINEAR = { type: 'linear', failAfter: 3, deload: 10 };
@@ -344,9 +344,15 @@ test('parseWeeks takes x, * or ×, a percent sign, spaces, a decimal point, a se
   });
 });
 
+test('parseWeeks takes a comma decimal in a percent, and a comma between sets', () => {
+  assert.deepEqual(parseWeeks('62,5x5,72,5x3+, 80x1'), {
+    weeks: [[{ pct: 62.5, reps: 5, amrap: false }, { pct: 72.5, reps: 3, amrap: true }, { pct: 80, reps: 1, amrap: false }]],
+  });
+});
+
 test('parseWeeks refuses a bad set, an empty text and the limits', () => {
   const bad = { error: { key: 'error.ruleWeeks' } };
-  for (const text of ['', '  \n ', '65', '65x', 'x5', '65x5x2', 'abc', '0x5', '151x5', '65x0', '65x2.5', '65x101', '62,5x5']) {
+  for (const text of ['', '  \n ', '65', '65x', 'x5', '65x5x2', 'abc', '0x5', '151x5', '65x0', '65x2.5', '65x101', '65x5,,75x5', '65x5 75x5']) {
     assert.deepEqual(parseWeeks(text), bad, text);
   }
   assert.deepEqual(parseWeeks(Array(9).fill('65x5').join('\n')), bad);
@@ -369,4 +375,30 @@ test('ruleFromInput gives the error of the first field out of range', () => {
   assert.deepEqual(ruleFromInput({ type: 'percent', tm: '', step: '5', weeks: '65x5' }, 'kg'), { error: { key: 'error.numberRequired' } });
   assert.deepEqual(ruleFromInput({ type: 'percent', tm: '100', step: '5', weeks: 'nope' }, 'kg'), { error: { key: 'error.ruleWeeks' } });
   assert.deepEqual(ruleFromInput({ type: 'other' }, 'kg'), { error: { key: 'error.rule' } });
+});
+
+// ---- PRG-6: the summary of the next target ----
+
+test('nextSummary is null with no rule, an unknown item or no weight', () => {
+  assert.equal(nextSummary(base(), 'r1', 'd1', 'i1'), null);
+  assert.equal(nextSummary(base(), 'r1', 'd1', 'nope'), null);
+  assert.equal(nextSummary(base({ rule: LINEAR, weight: null }), 'r1', 'd1', 'i1'), null);
+});
+
+test('nextSummary of a linear rule gives the weight and the reps, or the range', () => {
+  assert.deepEqual(nextSummary(base({ rule: LINEAR }), 'r1', 'd1', 'i1'), { type: 'linear', weight: 100, unit: 'kg', reps: '5', week: null });
+  assert.deepEqual(nextSummary(base({ rule: LINEAR, repsMax: 8 }), 'r1', 'd1', 'i1').reps, '5–8');
+  assert.equal(nextSummary(base({ rule: LINEAR, reps: null }), 'r1', 'd1', 'i1').reps, null);
+});
+
+test('nextSummary of a percent rule gives the last set of the week and the week number', () => {
+  assert.deepEqual(nextSummary(base({ rule: PERCENT }), 'r1', 'd1', 'i1'), { type: 'percent', weight: 85, unit: 'kg', reps: '5+', week: 1 });
+});
+
+test('nextSummary of a double plan gives the reps of each set', () => {
+  const state = withWorkouts(
+    base({ rule: DOUBLE, reps: 8, repsMax: 12 }),
+    session('2026-10-01', fives(60, [12, 10, 9]), { target: T(60, { reps: 8, repsMax: 12 }) }),
+  );
+  assert.deepEqual(nextSummary(state, 'r1', 'd1', 'i1'), { type: 'double', weight: 60, unit: 'kg', reps: '12/11/10', week: null });
 });

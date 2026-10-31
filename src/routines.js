@@ -233,8 +233,9 @@ export const TEMPLATES = [
   },
 ];
 
-// RT-8: adds the routine of a template, with the seed exercises that the doc lacks (EX-4). `texts(key)`
-// gives `template.<id>.name`, `template.<id>.day.<n>` and the seed names, as `seedExercises` takes.
+// RT-8: adds the routine of a template, with the seed exercises that the doc lacks (EX-4), and gives
+// its `id`. `texts(key)` gives `template.<id>.name`, `template.<id>.day.<n>` and the seed names, as
+// `seedExercises` takes.
 export const addTemplate = (state, templateId, texts, now, newId = () => crypto.randomUUID()) => {
   const template = TEMPLATES.find((t) => t.id === templateId);
   if (!template) return { state, error: { key: 'error.templateMissing' } };
@@ -261,5 +262,5 @@ export const addTemplate = (state, templateId, texts, now, newId = () => crypto.
   const { clean: base, error } = checkName(texts(`template.${templateId}.name`));
   if (error) return { state, error };
   const routine = { id: newId(), name: freeName(seeded, base), created: now.toISOString(), archived: false, days };
-  return { state: { ...seeded, routines: [...seeded.routines, routine] } };
+  return { state: { ...seeded, routines: [...seeded.routines, routine] }, id: routine.id };
 };

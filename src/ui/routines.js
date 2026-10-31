@@ -18,7 +18,7 @@ import {
   TEMPLATES,
   addTemplate,
 } from '#routines';
-import { setRule, nextTarget, ruleFromInput, weeksText, PRESET_531 } from '#progression';
+import { setRule, nextSummary, ruleFromInput, weeksText, PRESET_531 } from '#progression';
 import { startFromDay } from '#workouts';
 import { $, el, ui, state, lang, t, apply, render } from '#ui/context';
 import { icon } from '#ui/controls';
@@ -42,16 +42,11 @@ const emptyRoutine = () =>
     return result;
   });
 
-// RT-8: the routine of a template, with the common exercises that the doc lacks. The new routine is the
-// last of the list.
+// RT-8: the routine of a template, with the common exercises that the doc lacks; it opens.
 const fromTemplate = (id) => {
   const result = addTemplate(state, id, (key) => t(key), new Date());
   closeSheet();
-  if (result.error) {
-    apply(result);
-    return;
-  }
-  ui.routineId = result.state.routines.at(-1).id;
+  if (!result.error) ui.routineId = result.id;
   apply(result);
 };
 
@@ -140,21 +135,14 @@ const itemSheet = (routine, day, item = null) => {
   });
 };
 
-// SCR-12: the next target of a rule, `Next: 102.5 kg × 5`; the reps of each set when the plan
-// gives them, the last set of the week for a percent rule. Nothing with no rule or no weight.
+// SCR-12: the rule and its next target (PRG-6), `Linear · Next: 102.5 kg × 5`.
 const nextText = (routine, day, item) => {
-  if (!item.rule) return null;
-  const next = nextTarget(state, routine.id, day.id, item.id);
-  if (!next || next.weight === null) return null;
-  const repsOf = (s) => `${s.reps}${s.amrap ? '+' : ''}`;
-  let reps;
-  if (item.rule.type === 'percent') reps = repsOf(next.plan.at(-1));
-  else if (next.plan) reps = next.plan.map(repsOf).join('/');
-  else if (next.reps === null) reps = null;
-  else reps = next.repsMax === null ? String(next.reps) : `${next.reps}–${next.repsMax}`;
-  const target = reps === null ? weightText(next.weight, next.unit) : `${weightText(next.weight, next.unit)} × ${reps}`;
-  const week = item.rule.type === 'percent' ? ` · ${t('rule.weekOf', { n: next.state.week + 1 })}` : '';
-  return `${t(`rule.${item.rule.type}`)} · ${t('rule.next', { target })}${week}`;
+  const summary = nextSummary(state, routine.id, day.id, item.id);
+  if (!summary) return null;
+  const weight = weightText(summary.weight, summary.unit);
+  const target = summary.reps === null ? weight : `${weight} × ${summary.reps}`;
+  const week = summary.week === null ? '' : ` · ${t('rule.weekOf', { n: summary.week })}`;
+  return `${t(`rule.${summary.type}`)} · ${t('rule.next', { target })}${week}`;
 };
 
 const iconAction = (name, label, run) => {

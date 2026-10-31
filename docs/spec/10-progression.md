@@ -48,3 +48,7 @@ changes it. A start from a day keeps a copy of it in each exercise of the workou
   max × its percent / 100 and its reps, in the unit of the rule; `amrap` marks a set of as many
   reps as possible. The target has the sets of the week and the weight and the reps of its last
   set.
+- **PRG-6** The summary of the next target of an item with a rule has its weight and unit, its reps
+  as text and, for a percent rule, its week from 1. The reps are those of each set of a double plan
+  (`12/11/10`), the last set of the week of a percent rule (`5+` for AMRAP), else the reps or the
+  range (`5–8`), or none. An item with no rule, or a next target with no weight, has no summary.
