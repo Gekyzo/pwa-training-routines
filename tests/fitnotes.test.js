@@ -115,3 +115,37 @@ test('a long name keeps the suffix within 60 characters', () => {
   assert.ok(out.exercises.every((e) => e.name.length <= 60));
   assert.ok(out.exercises.some((e) => e.name.endsWith(' (2)')));
 });
+
+test('rows out of the limits or with an unreal date are dropped and counted (TRN-4)', () => {
+  const r = parseFitNotes(csv(
+    '2026-01-01,A,,5000,5,,,,', '2026-01-01,A,,1,5000,,,,', '2026-01-01,A,,,,,,200000,', '2026-01-01,A,,,,9999,km,,',
+    '2026-13-01,A,,1,1,,,,', '2026-02-31,A,,1,1,,,,', '2026-01-01,A,,100,5,,,,',
+  ));
+  assert.equal(r.rows.length, 1);
+  assert.equal(r.dropped, 6);
+  assert.equal(previewImport(emptyTraining(), r.rows, r.dropped).dropped, 6);
+});
+
+test('the doc stays valid after an import of extreme input', () => {
+  const long = 'X'.repeat(90);
+  const inputs = [
+    csv(`2026-01-01,A,,1000,1000,,,,${'c'.repeat(900)}`, '2026-01-01,B,,,,1000000,m,86400,'),
+    csv('2026-01-01,A,,5000,5000,,,,', '2026-02-31,A,,1,1,,,,', '2026-13-01,A,,1,1,,,,'),
+    csv(`2026-01-01,${long}1,${long}1,10,5,,,,`, `2026-01-01,${long}2,${long}2,10,5,,,,`),
+    csv('2026-01-01,Plank,,0,,,,60,'),
+  ];
+  for (const text of inputs) {
+    const { rows } = parseFitNotes(text);
+    const out = applyImport(emptyTraining(), rows, {}, counter()).state;
+    assert.ok(normalizeTraining(out), text.slice(0, 60));
+  }
+});
+
+test('long names cut before the clash test; weight 0 of a type with no weight is null', () => {
+  const long = 'X'.repeat(90);
+  const { rows } = parseFitNotes(csv(`2026-01-01,${long}1,${long}1,10,5,,,,`, `2026-01-01,${long}2,${long}2,10,5,,,,`, '2026-01-01,Plank,,0,,,,60,'));
+  const { state } = applyImport(emptyTraining(), rows, {}, counter());
+  assert.equal(state.exercises.filter((e) => e.name.startsWith('XXX')).length, 1);
+  assert.equal(state.categories.length, 1);
+  assert.equal(state.workouts[0].entries.find((e) => e.exerciseId === state.exercises.find((x) => x.name === 'Plank').id).sets[0].weight, null);
+});

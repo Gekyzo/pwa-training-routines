@@ -28,3 +28,7 @@ test('garbage gives an empty list', () => {
   }
   assert.deepEqual(parseSearch({ suggestions: [{ data: { name: 'A' } }] }), [{ name: 'A', category: '' }]);
 });
+
+test('a long name is cut to 60 characters', () => {
+  assert.equal(parseSearch({ suggestions: [{ data: { name: 'N'.repeat(100), category: 'c' } }] })[0].name.length, 60);
+});

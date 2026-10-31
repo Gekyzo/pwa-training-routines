@@ -1,4 +1,4 @@
-import { MAX_NAME, findById } from '#training';
+import { FIELDS, LIMITS, MAX_COMMENT, MAX_NAME, findById } from '#training';
 
 // DATA-4: the FitNotes CSV: the parse, the preview and the apply.
 
@@ -6,6 +6,13 @@ const FORMAT_ERROR = { error: 'error.fitnotesFormat' };
 const METERS = { m: 1, km: 1000, mi: 1609.344, ft: 0.3048, yd: 0.9144 };
 const WEIGHT_UNITS = { kg: 'kg', kgs: 'kg', lb: 'lb', lbs: 'lb' };
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+// A real calendar date: 2026-02-31 and month 13 are not.
+const realDate = (text) => {
+  const time = Date.parse(`${text}T00:00:00Z`);
+  return DATE.test(text) && !Number.isNaN(time) && new Date(time).toISOString().slice(0, 10) === text;
+};
+const within = (field, value) => value === null || value <= LIMITS[field][1];
 
 // RFC 4180: quoted fields, doubled quotes, any line break inside a quote, CRLF, a BOM.
 const parseCsv = (input) => {
@@ -63,23 +70,28 @@ export const parseFitNotes = (text) => {
     ['date', 'exercise', 'category', 'weight unit', 'reps', 'distance', 'distance unit', 'time', 'comment'].map(at);
   if (date < 0 || exercise < 0 || weightAt < 0 || reps < 0) return FORMAT_ERROR;
   const rows = [];
+  let dropped = 0;
   for (const cells of table.slice(1)) {
     const cell = (i) => (i >= 0 ? cells[i] ?? '' : '');
     const day = cell(date).trim();
-    const name = cell(exercise).trim();
+    const name = cell(exercise).trim().slice(0, MAX_NAME).trim();
     if (!DATE.test(day) || !name) continue;
     const weight = toNumber(cell(weightAt));
     const count = toNumber(cell(reps));
     const meters = toMeters(cell(distance), cell(distanceUnit).trim().toLowerCase());
     const seconds = toSeconds(cell(time));
-    if ([weight, count, meters, seconds].some(Number.isNaN)) continue;
+    if (!realDate(day) || [weight, count, meters, seconds].some(Number.isNaN)
+      || !within('weight', weight) || !within('reps', count) || !within('seconds', seconds) || !within('meters', meters)) {
+      dropped += 1;
+      continue;
+    }
     const unit = headerUnit ?? WEIGHT_UNITS[cell(unitAt).trim().toLowerCase()] ?? null;
     rows.push({
-      date: day, exercise: name, category: cell(category).trim(), weight, unit, reps: count === null ? null : Math.round(count),
-      meters, seconds, comment: cell(comment).trim(),
+      date: day, exercise: name, category: cell(category).trim().slice(0, MAX_NAME).trim(), weight, unit, reps: count === null ? null : Math.round(count),
+      meters, seconds, comment: cell(comment).trim().slice(0, MAX_COMMENT),
     });
   }
-  return { rows };
+  return { rows, dropped };
 };
 
 // EX-2: the type from the columns that the rows of an exercise fill. A weight of zero is no weight.
@@ -93,6 +105,13 @@ const typeOf = (rows) => {
   if (weight) return 'weight_reps';
   if (reps) return 'reps';
   return seconds ? 'time' : 'weight_reps';
+};
+
+// EX-2: only the fields of the type are filled.
+const fieldsOf = (type, row) => {
+  const used = FIELDS[type] ?? FIELDS.weight_reps;
+  const pick = (name, key) => (used.includes(name) ? row[key] : null);
+  return { weight: pick('weight', 'weight'), reps: pick('reps', 'reps'), seconds: pick('seconds', 'seconds'), meters: pick('meters', 'meters') };
 };
 
 const workoutId = (date) => `fitnotes-${date}`;
@@ -114,7 +133,7 @@ const plan = (state, rows) => {
 const sameName = (a, b) => a.trim().toLowerCase() === b.trim().toLowerCase();
 const existingOf = (state, name) => state.exercises.find((e) => sameName(e.name, name)) ?? null;
 
-export const previewImport = (state, rows) => {
+export const previewImport = (state, rows, dropped = 0) => {
   const { fresh, skippedDates, groups } = plan(state, rows);
   const newExercises = [];
   const conflicts = [];
@@ -132,7 +151,7 @@ export const previewImport = (state, rows) => {
     }
   }
   return {
-    workouts: new Set(fresh.map((r) => r.date)).size, sets: fresh.length, newExercises, newCategories, conflicts, skippedDates,
+    workouts: new Set(fresh.map((r) => r.date)).size, sets: fresh.length, dropped, newExercises, newCategories, conflicts, skippedDates,
   };
 };
 
@@ -157,8 +176,8 @@ export const applyImport = (state, rows, mapping, newId = () => crypto.randomUUI
     const choice = mapping?.[group.name];
     const mapped = choice && choice !== 'create' ? findById(next.exercises, choice) : null;
     const existing = existingOf(next, group.name);
-    if (mapped) { idOf.set(group.name.toLowerCase(), mapped.id); continue; }
-    if (existing && choice !== 'create' && existing.type === group.type) { idOf.set(group.name.toLowerCase(), existing.id); continue; }
+    if (mapped) { idOf.set(group.name.toLowerCase(), mapped); continue; }
+    if (existing && choice !== 'create' && existing.type === group.type) { idOf.set(group.name.toLowerCase(), existing); continue; }
     let categoryId = null;
     if (group.category) {
       const found = next.categories.find((c) => sameName(c.name, group.category));
@@ -178,7 +197,7 @@ export const applyImport = (state, rows, mapping, newId = () => crypto.randomUUI
         notes: '', unilateral: false, archived: false,
       }],
     };
-    idOf.set(group.name.toLowerCase(), id);
+    idOf.set(group.name.toLowerCase(), { id, type: group.type });
     exercisesAdded += 1;
   }
   const byDate = new Map();
@@ -194,9 +213,9 @@ export const applyImport = (state, rows, mapping, newId = () => crypto.randomUUI
       id: workoutId(date), date, started: stamp, finished: stamp, routineId: null, dayId: null,
       routineName: '', dayName: '', comment: '',
       entries: [...entries].map(([key, list]) => ({
-        id: newId(), exerciseId: idOf.get(key), itemId: null, target: null, group: null, skipped: false, substituteFor: null,
+        id: newId(), exerciseId: idOf.get(key).id, itemId: null, target: null, group: null, skipped: false, substituteFor: null,
         sets: list.map((r) => ({
-          id: newId(), weight: r.weight, unit: r.unit ?? state.settings.unit, reps: r.reps, seconds: r.seconds, meters: r.meters,
+          id: newId(), ...fieldsOf(idOf.get(key).type, r), unit: r.unit ?? state.settings.unit,
           done: true, comment: r.comment, kind: 'working', effort: null, at: null,
         })),
       })),

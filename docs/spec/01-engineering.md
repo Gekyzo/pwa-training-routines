@@ -32,7 +32,7 @@
 | `src/csv.js` | The CSV export of the done sets (DATA-2) | `training`, `units` |
 | `src/backup.js` | The restore by merge, the backup reminder and the text of a workout (DATA-3, DATA-5, INT-1) | `config`, `training`, `units` |
 | `src/fitnotes.js` | The parse, the preview and the apply of a FitNotes CSV (DATA-4) | `training` |
-| `src/wger.js` | The search URL of wger and the parse of its answer (INT-3) | nothing |
+| `src/wger.js` | The search URL of wger and the parse of its answer (INT-3) | `training` |
 | `src/particles.js` | The particles of a picture and their place in time (optional) | nothing |
 | `src/onboarding.js` | The show rule and the page steps of the walkthrough (optional) | nothing |
 | `src/ui/context.js` | The values that the views share, the toast, `render`, `commit` and `apply` | `i18n`, `onboarding`, `storage`, `training` |

@@ -1,3 +1,5 @@
+import { MAX_NAME } from '#training';
+
 // INT-3: the search of the wger exercise catalog. Pure: the view makes the request.
 
 export const MAX_SUGGESTIONS = 20;
@@ -14,10 +16,10 @@ export const parseSearch = (json) => {
   const result = [];
   for (const suggestion of suggestions) {
     const data = suggestion?.data;
-    const name = text(data?.name);
+    const name = text(data?.name).slice(0, MAX_NAME).trim();
     if (!name || seen.has(name.toLowerCase())) continue;
     seen.add(name.toLowerCase());
-    result.push({ name, category: text(data.category) });
+    result.push({ name, category: text(data.category).slice(0, MAX_NAME).trim() });
     if (result.length === MAX_SUGGESTIONS) break;
   }
   return result;

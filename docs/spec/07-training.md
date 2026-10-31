@@ -252,7 +252,9 @@ The domain of the app: exercises, routines and workouts. Its pure modules are `s
   or `yd` is stored in meters; no unit is meters. The rows of one date are one finished workout
   with the id `fitnotes-<date>` and done sets of the kind `working`. A date whose id the doc holds
   is skipped, so a second import adds nothing. The type of an exercise comes from the columns that
-  its rows fill. The preview counts workouts, sets, new exercises, new categories and skipped dates.
+  its rows fill, and only the fields of the type are filled. A row with a number above its limit
+  (TRN-4) or a date that is not a real date is dropped and counted; a comment and a name are cut to
+  their limits before the names are compared. The preview counts workouts, sets, new exercises, new categories, skipped dates and dropped rows.
   An exercise whose name an exercise of another type holds is a conflict: map it to an existing
   exercise, or create it with the name plus ` (2)` (the first free number).
 - **DATA-5** The device key `<slug>.backup` holds `{ lastExport, workoutsAtExport }`; **Export JSON**
