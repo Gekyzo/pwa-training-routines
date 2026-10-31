@@ -305,18 +305,26 @@ The domain of the app: exercises, routines and workouts. Its pure modules are `s
   starts the rest timer (TMR-1) at the end of a round (WO-15), and the timer stays at the top while
   the list scrolls.
 - **SCR-3** A weight box shows and takes the weight in the unit of the settings (PR-8).
-- **SCR-4** Routines lists the routines with their days. The detail has **Rename**, **Delete** and,
-  for each day, its items with their target, **Start** (RT-2, with one item at least), **Add
-  exercise**, **Rename day** and **Delete day**; then **Add day**. A tap on an item opens its
-  sheet; ↑ moves it up; the bin removes it. The weight of an item shows for `weight_reps` only.
+- **SCR-4** Routines lists the routines that are not archived with their days; the archived ones
+  are behind a closed head with their count. The detail has **Rename**, **Duplicate** (RT-5, the
+  copy opens), **Archive** or **Restore**, **Delete** and, for each day, its weekdays (SCR-13), its
+  items with their target, **Start** (RT-2, with one item at least), **Add exercise**, **Rename
+  day** and **Delete day**; then **Add day**. An archived routine says so below its name. A tap on
+  an item opens its sheet; ↑ moves it up; the bin removes it. The weight of an item shows for
+  `weight_reps` only. An item with a rule shows the rule and its next target (SCR-12).
 - **SCR-5** Exercises lists the exercises by category, by name, then **No category**; the archived
   ones are behind a closed head with their count. The empty list offers **Add exercise** and **Add
-  common exercises** (EX-4). The detail shows the category, the type and the rest, **Edit**,
-  **Archive** or **Restore**, and **Delete** when EX-6 allows it, then the records (PR-1) and the
-  history (WO-10); a tap on a workout of the history opens it in Workout. The sheet of an exercise
-  has the name, the category or a new one, the type and the rest.
-- **SCR-6** **+** makes a routine in Routines and an exercise in Exercises. `Escape` closes the
-  sheet, else the open detail, else the past workout.
+  common exercises** (EX-4). The detail shows the category, the type and the rest; the equipment,
+  the increment, the bar and **One side at a time** when set; the notes; **Edit**, **Merge into…**
+  (SCR-14), **Archive** or **Restore**, and **Delete** when EX-6 allows it; then the records
+  (PR-1), the rep maxes (SCR-14) and the history (WO-10). A tap on a workout of the history opens
+  it in Workout. The sheet of an exercise has the search of wger (SCR-15), the name, the category
+  or a new one, the type, the equipment (EX-8), the rest, the increment and the bar (EX-5) in the
+  unit of the settings, the notes and **One side at a time** (LOG-10). An increment and a bar that
+  the user does not change keep their own unit.
+- **SCR-6** **+** makes an exercise in Exercises. In Routines, **+** and the empty list open a
+  sheet with **Empty routine** (a name sheet) and the templates (RT-8), each with its days; a tap
+  adds it and opens it. `Escape` closes the sheet, else the open detail, else the past workout.
 - **SCR-7** At the start of the app and when the page comes back into view, before the render, an
   open workout whose last done set is over 4 hours old finishes (WO-14) and a toast says so. A
   render never finishes a workout. A start of a workout asks for the persistent storage (DATA-7).
@@ -345,3 +353,26 @@ The domain of the app: exercises, routines and workouts. Its pure modules are `s
   starts the workout (WO-16). **Share** gives the text of INT-1 to the share sheet of the phone, else
   copies it and says so. After a finish, the toast of DATA-5 has **Export**, which writes the JSON
   export and the device key.
+- **SCR-12** The sheet of an item has its rule (PRG-1): **None**, **Linear**, **Double** or
+  **Percent**, and only the fields of that type. Linear and double have the failures before a
+  deload and the deload. Percent has the training max and the weight added each cycle, in the unit
+  of the rule (else of the settings), and the weeks as text: one line a week, each set
+  `<pct>×<reps>`, a `+` for AMRAP, sets apart by a comma or a semicolon (`x` and `*` also mark the
+  reps; a decimal takes a point). **Fill 5/3/1** writes the four weeks 65/75/85+, 70/80/90+,
+  75/85/95+ and 40/50/60 with the reps 5/5/5+, 3/3/3+, 5/3/1+ and 5/5/5. A text that is not
+  valid is `error.ruleWeeks`. An empty failure count or deload takes its default; an empty step
+  is 0. Below the target of an item with a rule and a weight, the detail shows the rule and its
+  next target (`Next: 102.5 kg × 5`): the reps of each set of a double plan, and the last set of
+  the week of a percent rule, with its week.
+- **SCR-13** Each day shows its weekdays as seven toggles, Monday first, with the short names of
+  the language of the screen. A tap adds or removes that weekday (RT-7).
+- **SCR-14** **Merge into…** shows when another exercise has the same type. It opens a picker of
+  those exercises, the archived ones marked; a tap asks for a yes, then merges this exercise into
+  the one picked (EX-7), opens it, and offers Undo. The best e1RM record names the formula of the
+  settings (PR-2). The rep maxes (PR-3) list each rep count from 1 to 15 that has a weight, with
+  its date; with no row the group is hidden.
+- **SCR-15** The search of wger (INT-3) shows in the sheet of an exercise only when the browser is
+  online at the open. **Search**, or Enter in its box, makes one request; Enter does not save the
+  sheet. The list shows each suggestion with its category. A tap fills the name, and picks the
+  category of that name with no regard to case, else writes it as the new category. A failed
+  request, or an answer that is not valid, shows `error.wger`.

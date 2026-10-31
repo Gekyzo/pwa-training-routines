@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { emptyTraining, normalizeTraining } from '#training';
-import { setRule, nextTarget, roundLoad, itemHistory, amrapSets } from '#progression';
+import { setRule, nextTarget, roundLoad, itemHistory, amrapSets, PRESET_531, weeksText, parseWeeks, ruleFromInput } from '#progression';
 import { startFromDay, editSet, markDone, finishWorkout } from '#workouts';
 
 const LINEAR = { type: 'linear', failAfter: 3, deload: 10 };
@@ -320,4 +320,53 @@ test('the AMRAP sets of an open workout are its working sets that the plan marks
   assert.equal(amrapSets(state, { ...open, finished: '2026-10-05T19:00:00.000Z' }).size, 0);
   assert.equal(amrapSets(withWorkouts(base({ rule: LINEAR }), open), open).size, 0);
   assert.equal(amrapSets(state, { ...open, routineId: null }).size, 0);
+});
+
+// ---- The editor of a rule (SCR-12) ----
+
+test('the 5/3/1 preset has four weeks of three sets, the last of the first three an AMRAP', () => {
+  assert.equal(PRESET_531.length, 4);
+  assert.deepEqual(PRESET_531.map((week) => week.map((s) => s.pct)), [[65, 75, 85], [70, 80, 90], [75, 85, 95], [40, 50, 60]]);
+  assert.deepEqual(PRESET_531.map((week) => week.map((s) => s.reps)), [[5, 5, 5], [3, 3, 3], [5, 3, 1], [5, 5, 5]]);
+  assert.deepEqual(PRESET_531.map((week) => week.map((s) => s.amrap)), [[false, false, true], [false, false, true], [false, false, true], [false, false, false]]);
+});
+
+test('weeksText writes one line a week, and parseWeeks reads it back', () => {
+  const text = weeksText(PERCENT.weeks);
+  assert.equal(text, '65×5, 75×5, 85×5+\n70×3, 80×3, 90×3+');
+  assert.deepEqual(parseWeeks(text), { weeks: PERCENT.weeks });
+  assert.deepEqual(parseWeeks(weeksText(PRESET_531)), { weeks: PRESET_531 });
+});
+
+test('parseWeeks takes x, * or ×, a percent sign, spaces, a decimal point, a semicolon and empty lines', () => {
+  assert.deepEqual(parseWeeks(' 62.5% x 5 ;72.5*3+\n\n 80 × 1 \n'), {
+    weeks: [[{ pct: 62.5, reps: 5, amrap: false }, { pct: 72.5, reps: 3, amrap: true }], [{ pct: 80, reps: 1, amrap: false }]],
+  });
+});
+
+test('parseWeeks refuses a bad set, an empty text and the limits', () => {
+  const bad = { error: { key: 'error.ruleWeeks' } };
+  for (const text of ['', '  \n ', '65', '65x', 'x5', '65x5x2', 'abc', '0x5', '151x5', '65x0', '65x2.5', '65x101', '62,5x5']) {
+    assert.deepEqual(parseWeeks(text), bad, text);
+  }
+  assert.deepEqual(parseWeeks(Array(9).fill('65x5').join('\n')), bad);
+  assert.deepEqual(parseWeeks(Array(11).fill('65x5').join(', ')), bad);
+});
+
+test('ruleFromInput gives no rule, linear, double and percent rules', () => {
+  assert.deepEqual(ruleFromInput({ type: '' }, 'kg'), { rule: null });
+  assert.deepEqual(ruleFromInput({ type: 'linear', failAfter: '2', deload: '7,5' }, 'kg'), { rule: { type: 'linear', failAfter: 2, deload: 7.5 } });
+  assert.deepEqual(ruleFromInput({ type: 'double', failAfter: '', deload: '' }, 'kg'), { rule: { type: 'double', failAfter: 3, deload: 10 } });
+  assert.deepEqual(ruleFromInput({ type: 'percent', tm: '100', step: '5', weeks: weeksText(PERCENT.weeks) }, 'kg'), { rule: PERCENT });
+  assert.deepEqual(ruleFromInput({ type: 'percent', tm: '225', step: '', weeks: '65x5' }, 'lb').rule, {
+    type: 'percent', tm: 225, unit: 'lb', step: 0, weeks: [[{ pct: 65, reps: 5, amrap: false }]],
+  });
+});
+
+test('ruleFromInput gives the error of the first field out of range', () => {
+  assert.deepEqual(ruleFromInput({ type: 'linear', failAfter: '11', deload: '10' }, 'kg'), { error: { key: 'error.numberRange', params: { min: 1, max: 10 } } });
+  assert.deepEqual(ruleFromInput({ type: 'double', failAfter: '3', deload: '60' }, 'kg'), { error: { key: 'error.numberRange', params: { min: 0, max: 50 } } });
+  assert.deepEqual(ruleFromInput({ type: 'percent', tm: '', step: '5', weeks: '65x5' }, 'kg'), { error: { key: 'error.numberRequired' } });
+  assert.deepEqual(ruleFromInput({ type: 'percent', tm: '100', step: '5', weeks: 'nope' }, 'kg'), { error: { key: 'error.ruleWeeks' } });
+  assert.deepEqual(ruleFromInput({ type: 'other' }, 'kg'), { error: { key: 'error.rule' } });
 });

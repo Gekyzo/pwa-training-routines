@@ -21,7 +21,7 @@
 | `src/exercises.js` | Categories and exercises, and the common exercises (EX-1 to EX-8) | `training` |
 | `src/routines.js` | Routines, their days and their items, copies, weekdays and templates (RT-1, RT-5, RT-7, RT-8) | `exercises`, `training` |
 | `src/workouts.js` | Workouts: the start, the sets, the finish, the next day and the history (RT-3, WO-1 to WO-19) | `progression`, `training`, `units` |
-| `src/progression.js` | The rule of progression of an item and its next target from the history (PRG-1 to PRG-5) | `plates`, `training`, `units` |
+| `src/progression.js` | The rule of progression of an item and its next target from the history, and the rule of the fields of the item sheet (PRG-1 to PRG-5, SCR-12) | `plates`, `training`, `units` |
 | `src/units.js` | The conversion of a weight between kg and lb, and the clock text (PR-8) | nothing |
 | `src/bests.js` | The personal records of an exercise, the e1RM, the rep maxes, the volume and the effective load (PR-1 to PR-5, PR-9, PR-10) | `body`, `training`, `units` |
 | `src/plates.js` | The plates of a barbell load, the bar and the warm-up sets (PR-6, PR-7, PR-11) | `units` |
@@ -45,8 +45,8 @@
 | `src/ui/format.js` | The text of weights, sets, targets, dates and rests (PR-8) | `training`, `ui/context`, `units` |
 | `src/ui/workout.js` | The Workout section: the start, the open or past workout, its sets, its menus and the stopwatch (SCR-1 to SCR-3, SCR-7 to SCR-11) | `backup`, `bests`, `plates`, `progression`, `routines`, `stopwatch`, `storage`, `timer`, `training`, `ui/context`, `ui/controls`, `ui/exercises`, `ui/format`, `ui/sheet`, `ui/timer`, `units`, `workouts` |
 | `src/ui/timer.js` | The rest timer of the open workout (TMR-1 to TMR-3) | `storage`, `timer`, `ui/context`, `ui/format` |
-| `src/ui/routines.js` | The Routines section and the sheets of a routine (SCR-4) | `routines`, `training`, `ui/context`, `ui/controls`, `ui/format`, `ui/sheet`, `workouts` |
-| `src/ui/exercises.js` | The Exercises section, its detail with the records and the history, and the exercise sheet (SCR-5) | `bests`, `exercises`, `training`, `ui/context`, `ui/format`, `ui/sheet`, `workouts` |
+| `src/ui/routines.js` | The Routines section, the sheets of a routine, the templates, the weekdays and the rule of an item (SCR-4, SCR-6, SCR-12, SCR-13) | `progression`, `routines`, `training`, `ui/context`, `ui/controls`, `ui/format`, `ui/sheet`, `workouts` |
+| `src/ui/exercises.js` | The Exercises section, its detail with the records, the rep maxes, the merge and the history, and the exercise sheet with the wger search (SCR-5, SCR-14, SCR-15) | `bests`, `exercises`, `training`, `ui/context`, `ui/format`, `ui/sheet`, `units`, `wger`, `workouts` |
 | `src/ui/settings.js` | Settings: Training, Backup, Delete all data (SET-2, DATA-6), and the text of the page in its language | `csv`, `i18n`, `modules`, `storage`, `training`, `ui/account`, `ui/context`, `ui/controls`, `ui/onboarding`, `ui/update`, `units` |
 | `src/ui/dust.js` | The dust of a navigation item (optional) | `particles`, `ui/context`, `ui/controls` |
 | `src/ui/onboarding.js` | The walkthrough (optional) | `onboarding`, `sections`, `storage`, `ui/context`, `ui/controls` |

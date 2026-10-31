@@ -93,6 +93,8 @@ export const ui = {
   sheetOpen: false,
   // True while the archived exercises show.
   showArchived: false,
+  // True while the archived routines show (SCR-4).
+  showArchivedRoutines: false,
   // The page of the walkthrough in view, or null while the walkthrough is closed.
   onboarding: firstStart ? 0 : null,
   // `running` is the version of the cached shell; `latest` is the deployed one.

@@ -30,7 +30,7 @@ export const renderSheet = () => {
 // The value of each named control of the form, as text.
 const values = () => Object.fromEntries(new FormData($('edit-form')).entries());
 
-export const field = (labelKey, input) => el('label', { className: 'field' }, [input, el('span', { className: 'field-label', textContent: t(labelKey) })]);
+export const field = (labelKey, input, params) => el('label', { className: 'field' }, [input, el('span', { className: 'field-label', textContent: t(labelKey, params) })]);
 
 export const textInput = (name, value = '', { maxLength = 60, labelKey } = {}) =>
   el('input', { className: 'input field-input', type: 'text', name, value, maxLength, placeholder: labelKey ? t(labelKey) : '' });
@@ -45,6 +45,16 @@ export const numberInput = (name, value, { decimal = false, labelKey } = {}) =>
     inputMode: decimal ? 'decimal' : 'numeric',
     placeholder: labelKey ? t(labelKey) : '',
   });
+
+export const textArea = (name, value = '', { maxLength = 500, rows = 3, labelKey } = {}) =>
+  el('textarea', { className: 'input field-input', name, value, maxLength, rows, placeholder: labelKey ? t(labelKey) : '' });
+
+// A switch whose form value is `on` when it is on.
+export const switchInput = (name, labelKey, checked) => {
+  const input = el('input', { className: 'switch-input', type: 'checkbox', name, checked });
+  input.setAttribute('role', 'switch');
+  return el('label', { className: 'switch' }, [el('span', { textContent: t(labelKey) }), input]);
+};
 
 export const selectInput = (name, options, value) =>
   el('select', { className: 'select', name }, options.map(([key, text]) => el('option', { value: key, textContent: text, selected: key === (value ?? '') })));

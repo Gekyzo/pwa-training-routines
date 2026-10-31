@@ -1,4 +1,4 @@
-import { cleanRule, findById, sortedWorkouts } from '#training';
+import { cleanRule, checkNumber, findById, sortedWorkouts, MAX_RULE_WEEKS, MAX_RULE_SETS } from '#training';
 import { reachableBelow, barOf } from '#plates';
 import { convert, toKg } from '#units';
 
@@ -30,6 +30,65 @@ export const setRule = (state, routineId, dayId, itemId, rule) => {
   const items = (list) => list.map((i) => (i.id === itemId ? { ...i, rule: clean } : i));
   const days = (list) => list.map((d) => (d.id === dayId ? { ...d, items: items(d.items) } : d));
   return { state: { ...state, routines: state.routines.map((r) => (r.id === routineId ? { ...r, days: days(r.days) } : r)) } };
+};
+
+// SCR-12: the weeks of 5/3/1: 65/75/85+, 70/80/90+, 75/85/95+ and the deload week 40/50/60.
+const week = (pcts, reps, amrap) => pcts.map((pct, index) => ({ pct, reps: reps[index], amrap: amrap && index === pcts.length - 1 }));
+export const PRESET_531 = [
+  week([65, 75, 85], [5, 5, 5], true),
+  week([70, 80, 90], [3, 3, 3], true),
+  week([75, 85, 95], [5, 3, 1], true),
+  week([40, 50, 60], [5, 5, 5], false),
+];
+
+// SCR-12: the weeks of a percent rule as text: one line a week, `65×5, 75×5, 85×5+` (`+` is AMRAP).
+export const weeksText = (weeks) => weeks.map((sets) => sets.map((s) => `${s.pct}×${s.reps}${s.amrap ? '+' : ''}`).join(', ')).join('\n');
+
+const SET_TEXT = /^(\d+(?:\.\d+)?)\s*%?\s*[x×*]\s*(\d+)\s*(\+?)$/i;
+
+// SCR-12: the weeks of `weeksText`. A set is `<pct>[%] x|×|* <reps>[+]`, the sets of a line part at a
+// comma or a semicolon, so a decimal takes a point; empty lines are skipped. Else `error.ruleWeeks`.
+export const parseWeeks = (text) => {
+  const bad = { error: { key: 'error.ruleWeeks' } };
+  const lines = String(text ?? '').split('\n').map((line) => line.trim()).filter(Boolean);
+  if (!lines.length || lines.length > MAX_RULE_WEEKS) return bad;
+  const weeks = [];
+  for (const line of lines) {
+    const parts = line.split(/[,;]/).map((part) => part.trim());
+    if (parts.length > MAX_RULE_SETS) return bad;
+    const sets = [];
+    for (const part of parts) {
+      const match = SET_TEXT.exec(part);
+      if (!match) return bad;
+      const pct = checkNumber('pct', match[1]);
+      const reps = checkNumber('pctReps', match[2]);
+      if (pct.error || reps.error) return bad;
+      sets.push({ pct: pct.value, reps: reps.value, amrap: match[3] === '+' });
+    }
+    weeks.push(sets);
+  }
+  return { weeks };
+};
+
+// SCR-12: the rule of the fields of the item sheet, all text: `type` '' is no rule. A percent rule
+// takes `unit`. An empty `failAfter` or `deload` takes its default, an empty `step` is 0.
+export const ruleFromInput = ({ type, failAfter = '', deload = '', tm = '', step = '', weeks = '' }, unit) => {
+  if (!type) return { rule: null };
+  const numbers = {};
+  const fields = type === 'percent' ? [['tm', tm, false], ['step', step, true]] : [['failAfter', failAfter, true], ['deload', deload, true]];
+  for (const [key, value, optional] of fields) {
+    const result = checkNumber(key, value, { optional });
+    if (result.error) return { error: result.error };
+    numbers[key] = result.value;
+  }
+  let draft;
+  if (type === 'percent') {
+    const parsed = parseWeeks(weeks);
+    if (parsed.error) return parsed;
+    draft = { type, tm: numbers.tm, unit, step: numbers.step ?? 0, weeks: parsed.weeks };
+  } else draft = { type, failAfter: numbers.failAfter ?? 3, deload: numbers.deload ?? 10 };
+  const rule = cleanRule(draft);
+  return rule ? { rule } : { error: { key: 'error.rule' } };
 };
 
 // The increment of an exercise in `unit`: its own, in its unit, else 2.5 kg or 5 lb.

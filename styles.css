@@ -622,7 +622,8 @@
      @summary The head of the detail of a routine or an exercise: its name and a muted line about it.
      @part detail-title  The name.
      @part detail-meta   The line below the name.
-     @example <div><h2 class="detail-title">Squat</h2><p class="detail-meta">Legs · Weight and reps</p></div> */
+     @part detail-notes  The notes of an exercise (EX-8), in its lines.
+     @example <div><h2 class="detail-title">Squat</h2><p class="detail-meta">Legs · Weight and reps</p><p class="detail-notes">Knees out.</p></div> */
   .detail-title {
     margin: 0;
     font-size: var(--text-l);
@@ -632,5 +633,42 @@
   .detail-meta {
     margin: var(--space-1) 0 var(--space-3);
     color: var(--muted);
+  }
+
+  .detail-notes {
+    margin: 0 0 var(--space-3);
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+  }
+
+  /* @component weekdays
+     @scope routines
+     @summary The weekdays of a day of a routine (RT-7): seven chips, Monday first, in equal columns. A pressed chip is a weekday of the day.
+     @example <div class="weekdays"><button class="chip" type="button" aria-pressed="true">Mon</button><button class="chip" type="button" aria-pressed="false">Tue</button><button class="chip" type="button" aria-pressed="true">Wed</button><button class="chip" type="button" aria-pressed="false">Thu</button><button class="chip" type="button" aria-pressed="true">Fri</button><button class="chip" type="button" aria-pressed="false">Sat</button><button class="chip" type="button" aria-pressed="false">Sun</button></div> */
+  .weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: var(--space-1);
+    margin-bottom: var(--space-2);
+  }
+
+  .weekdays > .chip {
+    padding: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* @component rule-fields
+     @scope routines
+     @summary The fields of one type of progression rule in the item sheet (SCR-12); hidden while another type is chosen.
+     @example <div class="rule-fields"><label class="field"><input class="input field-input" type="text" value="3"><span class="field-label">Failures before a deload</span></label><label class="field"><input class="input field-input" type="text" value="10"><span class="field-label">Deload (%)</span></label></div> */
+  .rule-fields {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .rule-fields[hidden] {
+    display: none;
   }
 }
