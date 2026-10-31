@@ -118,13 +118,18 @@ const locate = (state, workoutId, entryId, setId) => {
   return { workout, entry, set };
 };
 
+// WO-3: the first set of an exercise in a workout has the values of the last time.
+const firstSet = (state, exerciseId, workoutId, setId) => {
+  const [last] = previousSets(state, exerciseId, workoutId);
+  return last ? { ...blankSet(setId, last.unit), ...copyValues(last) } : blankSet(setId, state.settings.unit);
+};
+
 // WO-3: an exercise joins the workout with one set of the values of the last time.
 export const addEntry = (state, workoutId, exerciseId, id = uuid(), setId = uuid()) => {
   const { workout, error } = locate(state, workoutId);
   if (error) return error;
   if (!findById(state.exercises, exerciseId)) return { state, error: { key: 'error.exerciseMissing' } };
-  const [last] = previousSets(state, exerciseId, workout.id);
-  const set = last ? { ...blankSet(setId, last.unit), ...copyValues(last) } : blankSet(setId, state.settings.unit);
+  const set = firstSet(state, exerciseId, workout.id, setId);
   return withEntries(state, workoutId, (entries) => [...entries, newEntry(id, exerciseId, [set])]);
 };
 
@@ -139,8 +144,10 @@ export const addSet = (state, workoutId, entryId, id = uuid()) => {
   return withSets(state, workoutId, entryId, (sets) => [...sets, set]);
 };
 
-// WO-12: the effort in the scale of the settings: RPE 6 to 10 by halves, or RIR 0 to 10.
+// WO-12: the effort in the scale of the settings: RPE 6 to 10 by halves, or RIR 0 to 10. An empty
+// value clears it, with no scale too.
 const checkEffort = (scale, input) => {
+  if (input === null || input === undefined || String(input).trim() === '') return { value: null };
   if (scale === 'none') return { error: { key: 'error.effortOff' } };
   const { value, error } = checkNumber(scale, input, { optional: true });
   if (error) return { error };
@@ -190,12 +197,12 @@ const complete = (type, set) => {
   return set.meters !== null || set.seconds !== null;
 };
 
-// WO-14: a done set holds the time of the mark; a set marked not done has none.
+// WO-14: a done set holds the time of its first mark; a set marked not done has none.
 export const markDone = (state, workoutId, entryId, setId, done = true, now = null) => {
   const { entry, set, error } = locate(state, workoutId, entryId, setId);
   if (error) return error;
   if (done && !complete(typeOf(state, entry.exerciseId), set)) return { state, error: { key: 'error.setIncomplete' } };
-  const at = done && now ? now.toISOString() : null;
+  const at = done ? (set.done ? set.at : null) ?? now?.toISOString() ?? null : null;
   return withSets(state, workoutId, entryId, (sets) => sets.map((s) => (s.id === setId ? { ...s, done, at } : s)));
 };
 
@@ -298,10 +305,12 @@ const groupOf = (workout, entryId) => {
   return entry?.group ? workout.entries.filter((e) => e.group === entry.group) : null;
 };
 
-// True when the rest timer starts after a set of the entry: an entry with no group, or the last of its group.
+// True when the rest timer starts after a set of the entry: an entry with no group, or the last
+// entry of its group that is not skipped and has sets (the end of the round).
 export const restsAfter = (workout, entryId) => {
   const group = groupOf(workout, entryId);
-  return !group || group.at(-1).id === entryId;
+  const end = group?.filter((e) => !e.skipped && e.sets.length).at(-1);
+  return !end || end.id === entryId;
 };
 
 // The next entry of the group, in a cycle from the entry, that has a set not done; else null.
@@ -382,10 +391,12 @@ export const skipEntry = (state, workoutId, entryId) => {
   return withEntry(state, workoutId, entryId, (e) => ({ ...e, sets: [], skipped: true }));
 };
 
-export const unskipEntry = (state, workoutId, entryId) => {
-  const { error } = locate(state, workoutId, entryId);
+// An exercise back from a skip with no set gets one set, as WO-3, so the finish keeps it.
+export const unskipEntry = (state, workoutId, entryId, setId = uuid()) => {
+  const { entry, error } = locate(state, workoutId, entryId);
   if (error) return error;
-  return withEntry(state, workoutId, entryId, (e) => ({ ...e, skipped: false }));
+  const sets = entry.sets.length ? entry.sets : [firstSet(state, entry.exerciseId, workoutId, setId)];
+  return withEntry(state, workoutId, entryId, (e) => ({ ...e, skipped: false, sets }));
 };
 
 // Another exercise in the place of the entry; `substituteFor` is the exercise of the start. The sets

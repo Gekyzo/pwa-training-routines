@@ -433,3 +433,50 @@ test('a substitute that is not for bodyweight drops a negative weight (WO-17)', 
   ({ state } = substituteEntry(state, 'w1', 'n1', 'bench'));
   assert.deepEqual(entryOf(state, 'w1', 'n1').sets.map((s) => [s.weight, s.reps]), [[null, 8]]);
 });
+
+test('the round of a superset ends at its last exercise that is not skipped and has sets (WO-15)', () => {
+  let state = threeEntries();
+  ({ state } = groupEntries(state, 'w1', ['n1', 'n2', 'n3'], 'g1'));
+  ({ state } = skipEntry(state, 'w1', 'n3'));
+  assert.deepEqual(['n1', 'n2', 'n3'].map((id) => restsAfter(state.workouts[0], id)), [false, true, false]);
+  ({ state } = deleteSet(state, 'w1', 'n2', 's3'));
+  ({ state } = deleteSet(state, 'w1', 'n2', 's4'));
+  assert.deepEqual(['n1', 'n2'].map((id) => restsAfter(state.workouts[0], id)), [true, false]);
+});
+
+test('a set marked done again keeps its time, and a done mark with no time has none (WO-14)', () => {
+  let { state } = startWorkout(base(), DAY1, 'w1');
+  ({ state } = addEntry(state, 'w1', 'plank', 'n1', 's1'));
+  ({ state } = editSet(state, 'w1', 'n1', 's1', { seconds: '30' }));
+  ({ state } = markDone(state, 'w1', 'n1', 's1', true, at(18)));
+  ({ state } = markDone(state, 'w1', 'n1', 's1', true, at(19)));
+  assert.equal(entryOf(state, 'w1', 'n1').sets[0].at, at(18).toISOString());
+  ({ state } = markDone(state, 'w1', 'n1', 's1', true));
+  assert.equal(entryOf(state, 'w1', 'n1').sets[0].at, at(18).toISOString());
+  ({ state } = markDone(state, 'w1', 'n1', 's1', false));
+  ({ state } = markDone(state, 'w1', 'n1', 's1', true));
+  assert.deepEqual([entryOf(state, 'w1', 'n1').sets[0].done, entryOf(state, 'w1', 'n1').sets[0].at], [true, null]);
+});
+
+test('an effort clears with no scale, and only a value is refused (WO-12)', () => {
+  let { state } = startWorkout(base(), DAY1, 'w1');
+  ({ state } = addEntry(state, 'w1', 'squat', 'n1', 's1'));
+  const rpe = { ...state, settings: { ...state.settings, effort: 'rpe' } };
+  ({ state } = editSet(rpe, 'w1', 'n1', 's1', { effort: '9' }));
+  state = { ...state, settings: { ...state.settings, effort: 'none' } };
+  assert.equal(entryOf(editSet(state, 'w1', 'n1', 's1', { effort: '' }).state, 'w1', 'n1').sets[0].effort, null);
+  assert.equal(entryOf(editSet(state, 'w1', 'n1', 's1', { effort: null }).state, 'w1', 'n1').sets[0].effort, null);
+  assert.equal(editSet(state, 'w1', 'n1', 's1', { effort: '9' }).error.key, 'error.effortOff');
+});
+
+test('an exercise back from a skip gets one set of the values of the last time (WO-17)', () => {
+  let { state } = startWorkout(afterDayA(), DAY2, 'w2');
+  ({ state } = addEntry(state, 'w2', 'squat', 'n1', 's1'));
+  ({ state } = skipEntry(state, 'w2', 'n1'));
+  ({ state } = unskipEntry(state, 'w2', 'n1', 's9'));
+  const entry = entryOf(state, 'w2', 'n1');
+  assert.equal(entry.skipped, false);
+  assert.deepEqual(entry.sets.map((s) => [s.id, s.weight, s.reps, s.done]), [['s9', 100, 5, false]]);
+  ({ state } = unskipEntry(state, 'w2', 'n1', 's10'));
+  assert.equal(entryOf(state, 'w2', 'n1').sets.length, 1);
+});

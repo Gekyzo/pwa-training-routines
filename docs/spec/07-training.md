@@ -139,28 +139,30 @@ The domain of the app: exercises, routines and workouts. Its pure modules are `s
 - **WO-11** A set has a kind: `working`, `warmup`, `drop` or `failure` (`error.setKind`). A new
   set is `working`. Warm-up sets count in the history.
 - **WO-12** A set takes an effort in the scale of the settings: RPE 6 to 10 in steps of 0.5, or
-  RIR 0 to 10, an integer (`error.numberRange`). With no scale an effort is `error.effortOff`.
+  RIR 0 to 10, an integer (`error.numberRange`). With no scale a value is `error.effortOff`; an
+  empty effort clears it with any scale.
 - **WO-13** The weight of a set of an exercise with the equipment `bodyweight` goes from -1000 to
   1000: a negative weight is help, such as an assisted machine. For another exercise a negative
   weight is `error.numberRange`.
-- **WO-14** A done set holds the time of its mark; a set marked not done has none. The duration of
-  a workout starts at its first done set, else at its start. It ends at the finish when the finish
-  is within 4 hours after the last done set, else at the last done set. An open workout whose last
-  done set is more than 4 hours old finishes at that set (WO-7).
+- **WO-14** A done set holds the time of its first mark; a set marked not done has none. The
+  duration of a workout starts at its first done set, else at its start. It ends at the finish
+  when the finish is within 4 hours after the last done set, else at the last done set. An open
+  workout whose last done set is more than 4 hours old finishes at that set (WO-7).
 - **WO-15** Two exercises or more of a workout join a superset (`error.groupSize`). They move next
   to each other, at the place of the first one. An exercise of another superset leaves it. A
   superset left with one exercise ends. The next set goes to the next exercise of the superset
   that has a set not done, in a cycle. The rest timer starts only after a set of the last exercise
-  of the superset.
+  of the superset that is not skipped and has sets (the end of the round).
 - **WO-16** **Repeat** starts an open workout on a date (`error.date`) with the exercises and the
   sets of another workout, in new supersets of the same exercises. The sets are not done, with
   the values and the effort of the source or blank; each keeps its kind, never its comment. A
   repeat while a workout is open is `error.workoutOpen`.
 - **WO-17** **Skip** removes the sets of an exercise and marks it skipped; an exercise with a done
-  set is `error.entryHasDone`. **Substitute** puts another exercise in the place of an exercise
-  and keeps the exercise of the start and the target. The sets keep their values when the two
-  types are the same, else they are blank, and a done set is then `error.entryHasDone`. A negative
-  weight goes when the new exercise is not `bodyweight`.
+  set is `error.entryHasDone`. An exercise back from a skip with no set gets one set, as WO-3.
+  **Substitute** puts another exercise in the place of an exercise and keeps the exercise of the
+  start and the target. The sets keep their values when the two types are the same, else they are
+  blank, and a done set is then `error.entryHasDone`. A negative weight goes when the new exercise
+  is not `bodyweight`.
 - **WO-18** A workout from a day keeps, for each exercise, the item and a copy of its target: sets,
   reps, top of reps, weight, rest, and the unit of the settings. A later change of the routine
   changes no workout.
