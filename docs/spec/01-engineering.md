@@ -25,7 +25,9 @@
 | `src/units.js` | The conversion of a weight between kg and lb, and the clock text (PR-8) | nothing |
 | `src/bests.js` | The personal records of an exercise, the e1RM, the rep maxes, the volume and the effective load (PR-1 to PR-5, PR-9, PR-10) | `body`, `training`, `units` |
 | `src/plates.js` | The plates of a barbell load and the warm-up sets (PR-6, PR-7) | nothing |
-| `src/body.js` | The body weight of a date (PR-9) | `training` |
+| `src/body.js` | The body log, the measures, the relative strength and the DOTS (BODY-1 to BODY-3, PR-9) | `bests`, `exercises`, `training`, `units` |
+| `src/insights.js` | The series, the calendar, the consistency, the sets a week, the stalls and the comparison (STAT-1 to STAT-6) | `bests`, `progression`, `training`, `units` |
+| `src/goals.js` | The goals and their progress (GOAL-1, GOAL-2) | `bests`, `body`, `insights`, `training`, `units` |
 | `src/timer.js` | The rest of a set and the rest timer (TMR-1 to TMR-3) | `training` |
 | `src/csv.js` | The CSV export of the done sets (DATA-2) | `training`, `units` |
 | `src/particles.js` | The particles of a picture and their place in time (optional) | nothing |
@@ -111,7 +113,9 @@ sync keeps `pwa-training-routines.sync` and `pwa-training-routines.queue` ([09-s
 | `tests/units.test.js` | The conversion and the rounding of a weight, and the clock text |
 | `tests/bests.test.js` | The records of each type, the tie and the units, the e1RM, the rep maxes, the marks of a set, the volume and the effective load |
 | `tests/plates.test.js` | The plates of a load, the nearest loads and the warm-up sets |
-| `tests/body.test.js` | The body weight of a date |
+| `tests/body.test.js` | The body weight of a date, the entries, the measures, the relative strength and the DOTS |
+| `tests/insights.test.js` | The dates, the series, the calendar, the consistency, the sets a week, the stalls and the comparison |
+| `tests/goals.test.js` | The goals, their checks and their progress |
 | `tests/timer.test.js` | The rest of a set, the time left, the change of time and the stored timer |
 | `tests/csv.test.js` | The rows, the order and the quotes of the CSV export |
 | `tests/pocketbase.test.js` | The client of the account server and its URL (ACC-3, ACC-4, ACC-6), the pull, the push and the stream of the records (SYNC-3, SYNC-4, SYNC-6) |

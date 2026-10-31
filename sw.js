@@ -17,6 +17,8 @@ const SHELL = [
   './src/bests.js',
   './src/plates.js',
   './src/body.js',
+  './src/insights.js',
+  './src/goals.js',
   './src/units.js',
   './src/workouts.js',
   './src/progression.js',

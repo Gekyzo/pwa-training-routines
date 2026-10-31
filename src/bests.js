@@ -36,7 +36,7 @@ export const effectiveLoad = (state, set, exercise, date) => {
 };
 
 // PR-10 (LOG-5): the done sets that count, warm-ups out.
-const countedSets = (entry) => entry.sets.filter((s) => s.done && s.kind !== 'warmup');
+export const countedSets = (entry) => entry.sets.filter((s) => s.done && s.kind !== 'warmup');
 
 const byDate = (state) =>
   [...state.workouts].sort((a, b) => (a.date === b.date ? (a.started < b.started ? -1 : 1) : a.date < b.date ? -1 : 1));
