@@ -1,4 +1,5 @@
 import { cleanRule, findById, sortedWorkouts } from '#training';
+import { reachableBelow } from '#plates';
 import { convert, toKg } from '#units';
 
 // Progression: the rule of an item and its next target, derived from the history at each read and
@@ -35,11 +36,22 @@ export const setRule = (state, routineId, dayId, itemId, rule) => {
 export const incrementOf = (exercise, unit) =>
   exercise?.increment ? convert(exercise.increment, exercise.unit ?? unit, unit) : DEFAULT_INCREMENT[unit];
 
-// A weight of a target, from 0 to 1000: rounded down to the increment when the increment is in
-// `unit`, else kept to one decimal (a floor in another unit would undo the increment). The plates
-// of a barbell (PR-6) round it here too.
+// PR-6, PR-10: a barbell target rounds down to a load the plates reach, with the bar of the exercise
+// (in its unit) or of the settings. `null` when it is no barbell, has no plates, or lies under the bar.
+const platesLoad = (state, exercise, weight, unit) => {
+  const plates = state.settings.plates[unit];
+  if (exercise?.equipment !== 'barbell' || !plates.length) return null;
+  const bar = exercise.bar === null ? state.settings.bar[unit] : tidy(convert(exercise.bar, exercise.unit ?? unit, unit));
+  return reachableBelow(weight, bar, plates);
+};
+
+// A weight of a target, from 0 to 1000: a barbell target rounds down to the plates (PR-6); another
+// one to the increment when the increment is in `unit`, else it keeps one decimal (a floor in another
+// unit would undo the increment).
 export const roundLoad = (state, exercise, weight, unit) => {
   if (weight === null) return null;
+  const reached = platesLoad(state, exercise, weight, unit);
+  if (reached !== null) return Math.min(reached, 1000);
   const foreign = Boolean(exercise?.increment) && (exercise.unit ?? unit) !== unit;
   const step = incrementOf(exercise, unit);
   const value = foreign ? Math.round(weight * 10) / 10 : tidy(Math.floor(weight / step + 1e-9) * step);

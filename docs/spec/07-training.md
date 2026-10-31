@@ -215,6 +215,9 @@ The domain of the app: exercises, routines and workouts. Its pure modules are `s
   before that date counts. Without one, the weight of the set alone counts and the load is partial.
   Records (PR-1 to PR-3) and volume (PR-5) use the effective load of such an exercise.
 - **PR-10** A warm-up set makes no record and adds no volume. A working, drop or failure set does.
+- **PR-11** A target of a `barbell` exercise rounds down to a load the plates reach (PR-6): the bar
+  of the exercise, else the bar of the settings, and the plates of the settings. Under the bar, or with
+  no plates, the increment rounds it as for other equipment.
 - **PR-8** A set keeps the unit of its weight. Records compare weights in kg. The screen shows a
   weight in the unit of the settings, rounded to one decimal; a change of the unit rewrites no set.
 

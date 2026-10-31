@@ -199,6 +199,31 @@ test('roundLoad rounds down to the increment in the unit', () => {
   assert.equal(roundLoad(state, exercise, -5, 'kg'), 0);
 });
 
+test('roundLoad rounds a barbell down to a load the plates reach (PR-6)', () => {
+  const state = base();
+  const barbell = { ...base().exercises[0], equipment: 'barbell' };
+  assert.equal(roundLoad(state, barbell, 103.9, 'kg'), 102.5);
+  assert.equal(roundLoad(state, barbell, 101, 'kg'), 100);
+  assert.equal(roundLoad(state, barbell, 100, 'kg'), 100);
+  assert.equal(roundLoad(state, barbell, 228, 'lb'), 225);
+  // A bar of the exercise in its unit; the plates are those of the settings.
+  const light = { ...barbell, bar: 15, unit: 'kg' };
+  assert.equal(roundLoad(state, light, 57, 'kg'), 55);
+  // Under the bar: nothing is reachable, so the increment rounds.
+  assert.equal(roundLoad(state, barbell, 17, 'kg'), 15);
+  // Dumbbells and the like keep the increment.
+  assert.equal(roundLoad(state, { ...barbell, equipment: 'dumbbell' }, 101, 'kg'), 100);
+  // No plates: the increment.
+  const bare = { ...state, settings: { ...state.settings, plates: { kg: [], lb: [] } } };
+  assert.equal(roundLoad(bare, barbell, 101, 'kg'), 100);
+});
+
+test('a barbell rule targets the plates the bar reaches (PR-6)', () => {
+  const state = withWorkouts(base({ rule: LINEAR }, { equipment: 'barbell' }),
+    session('2026-10-01', [100, 100, 100].map((w) => set(w, 5)), { target: T(100) }));
+  assert.equal(next(state).weight, 102.5);
+});
+
 test('a planned value that the user edits is what the rule reads (PRG-4)', () => {
   let { state } = startFromDay(base({ rule: LINEAR }), 'r1', 'd1', new Date(2026, 9, 1, 18), 'w1', (() => { let n = 0; return () => `id${++n}`; })());
   const [entry] = state.workouts[0].entries;
