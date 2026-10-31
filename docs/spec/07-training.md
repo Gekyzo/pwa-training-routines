@@ -115,7 +115,7 @@ The domain of the app: exercises, routines and workouts. Its pure modules are `s
 - **WO-1** A workout starts on the local date of its start, open (not finished). One workout is
   open at a time: a start while one is open is `error.workoutOpen`.
 - **WO-2** A workout from a day of a routine holds one exercise for each item, each with the sets
-  of its target, not done. It keeps the names of the routine and the day of its start.
+  of its target, not done. It keeps the names of the routine and the day of its start (WO-18).
 - **WO-3** **Add exercise** adds an exercise with one set.
 - **WO-4** A set holds the fields of the type of its exercise (EX-2) and a comment; an edit of
   another field changes nothing. Each value is checked as TRN-4. A weight is in the unit of the
@@ -125,8 +125,9 @@ The domain of the app: exercises, routines and workouts. Its pure modules are `s
   `distance_time` (`error.setIncomplete`). Only done sets
   count in the history and the records.
 - **WO-6** A workout takes a comment and another date, a past date too (`error.date`).
-- **WO-7** **Finish** drops the sets that are not done and the exercises left with no set. A
-  workout with no done set is deleted. A finished workout stays editable.
+- **WO-7** **Finish** drops the sets that are not done and the exercises left with no set, except a
+  skipped exercise (WO-17). A workout with no done set is deleted. A finished workout stays
+  editable.
 - **WO-8** A new set copies the values, never the done mark or the comment: of the last set of its
   exercise in this workout; else of the set of the same place in the newest other workout that
   has done sets of the exercise (the last one when there are fewer); else it is blank. A planned
@@ -135,6 +136,34 @@ The domain of the app: exercises, routines and workouts. Its pure modules are `s
   `error.workoutMissing`, `error.entryMissing` or `error.setMissing`.
 - **WO-10** The history of an exercise lists each workout with done sets of
   it, newest first, with those sets.
+- **WO-11** A set has a kind: `working`, `warmup`, `drop` or `failure` (`error.setKind`). A new
+  set is `working`. Warm-up sets count in the history.
+- **WO-12** A set takes an effort in the scale of the settings: RPE 6 to 10 in steps of 0.5, or
+  RIR 0 to 10, an integer (`error.numberRange`). With no scale an effort is `error.effortOff`.
+- **WO-13** The weight of a set of an exercise with the equipment `bodyweight` goes from -1000 to
+  1000: a negative weight is help, such as an assisted machine. For another exercise a negative
+  weight is `error.numberRange`.
+- **WO-14** A done set holds the time of its mark; a set marked not done has none. The duration of
+  a workout starts at its first done set, else at its start. It ends at the finish when the finish
+  is within 4 hours after the last done set, else at the last done set. An open workout whose last
+  done set is more than 4 hours old finishes at that set (WO-7).
+- **WO-15** Two exercises or more of a workout join a superset (`error.groupSize`). They move next
+  to each other, at the place of the first one. An exercise of another superset leaves it. A
+  superset left with one exercise ends. The next set goes to the next exercise of the superset
+  that has a set not done, in a cycle. The rest timer starts only after a set of the last exercise
+  of the superset.
+- **WO-16** **Repeat** starts an open workout on a date (`error.date`) with the exercises and the
+  sets of another workout, in new supersets of the same exercises. The sets are not done, with
+  the values and the effort of the source or blank; each keeps its kind, never its comment. A
+  repeat while a workout is open is `error.workoutOpen`.
+- **WO-17** **Skip** removes the sets of an exercise and marks it skipped; an exercise with a done
+  set is `error.entryHasDone`. **Substitute** puts another exercise in the place of an exercise
+  and keeps the exercise of the start and the target. The sets keep their values when the two
+  types are the same, else they are blank, and a done set is then `error.entryHasDone`. A negative
+  weight goes when the new exercise is not `bodyweight`.
+- **WO-18** A workout from a day keeps, for each exercise, the item and a copy of its target: sets,
+  reps, top of reps, weight, rest, and the unit of the settings. A later change of the routine
+  changes no workout.
 
 ## Records and units
 

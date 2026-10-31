@@ -56,7 +56,7 @@ const fieldInput = (workout, entry, set, field) => {
 
 // WO-5: a done set starts the rest timer of its exercise, in the open workout only (TMR-1, TMR-2).
 const toggleDone = (workout, entry, set, done) => {
-  if (!apply(markDone(state, workout.id, entry.id, set.id, done))) {
+  if (!apply(markDone(state, workout.id, entry.id, set.id, done, new Date()))) {
     render();
     return;
   }
