@@ -30,6 +30,9 @@
 | `src/goals.js` | The goals and their progress (GOAL-1, GOAL-2) | `bests`, `body`, `insights`, `training`, `units` |
 | `src/timer.js` | The rest of a set and the rest timer (TMR-1 to TMR-3) | `training` |
 | `src/csv.js` | The CSV export of the done sets (DATA-2) | `training`, `units` |
+| `src/backup.js` | The restore by merge, the backup reminder and the text of a workout (DATA-3, DATA-5, INT-1) | `config`, `training`, `units` |
+| `src/fitnotes.js` | The parse, the preview and the apply of a FitNotes CSV (DATA-4) | `training` |
+| `src/wger.js` | The search URL of wger and the parse of its answer (INT-3) | nothing |
 | `src/particles.js` | The particles of a picture and their place in time (optional) | nothing |
 | `src/onboarding.js` | The show rule and the page steps of the walkthrough (optional) | nothing |
 | `src/ui/context.js` | The values that the views share, the toast, `render`, `commit` and `apply` | `i18n`, `onboarding`, `storage`, `training` |
@@ -82,7 +85,7 @@
 ## Storage keys
 
 The doc keys are in [07-training.md](07-training.md). The device preferences are `pwa-training-routines.lang`,
-`pwa-training-routines.hand`, `pwa-training-routines.theme`, `pwa-training-routines.modules` and `pwa-training-routines.onboarded`. The account keeps `pwa-training-routines.session` (ACC-5) and
+`pwa-training-routines.hand`, `pwa-training-routines.theme`, `pwa-training-routines.modules` and `pwa-training-routines.onboarded`. The backup reminder keeps `pwa-training-routines.backup` (DATA-5). The account keeps `pwa-training-routines.session` (ACC-5) and
 `pwa-training-routines.offline` (ACC-10), and `pwa-training-routines.oauth` in `sessionStorage` for the time of a Google redirect (ACC-4). The
 sync keeps `pwa-training-routines.sync` and `pwa-training-routines.queue` ([09-sync.md](09-sync.md)).
 
@@ -118,6 +121,9 @@ sync keeps `pwa-training-routines.sync` and `pwa-training-routines.queue` ([09-s
 | `tests/goals.test.js` | The goals, their checks and their progress |
 | `tests/timer.test.js` | The rest of a set, the time left, the change of time and the stored timer |
 | `tests/csv.test.js` | The rows, the order and the quotes of the CSV export |
+| `tests/backup.test.js` | The merge of two docs, the backup reminder and the text of a workout |
+| `tests/fitnotes.test.js` | The parse of a FitNotes CSV, the preview and the apply |
+| `tests/wger.test.js` | The search URL and the parse of the answer |
 | `tests/pocketbase.test.js` | The client of the account server and its URL (ACC-3, ACC-4, ACC-6), the pull, the push and the stream of the records (SYNC-3, SYNC-4, SYNC-6) |
 | `tests/session.test.js` | The session, the start route, the offline flag, the pending sign-in and the return URL (ACC-1, ACC-4, ACC-5, ACC-10) |
 | `tests/records.test.js` | The records of the doc, the doc of the records and the diff |

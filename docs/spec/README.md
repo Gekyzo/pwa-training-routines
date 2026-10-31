@@ -39,7 +39,7 @@ The rules DS-1 to DS-8 and LAY-1 to LAY-4 belong to the design system, `pwa-desi
 | `DSV` | 04-design-system |
 | `NAV`, `MOD`, `SET`, `ONB` | 05-layout |
 | `I18N` | 06-i18n |
-| `TRN`, `EX`, `RT`, `WO`, `PR`, `TMR`, `DATA`, `SCR` | 07-training |
+| `TRN`, `EX`, `RT`, `WO`, `PR`, `TMR`, `DATA`, `INT`, `SCR` | 07-training |
 | `ACC` | 08-account |
 | `SYNC` | 09-sync |
 | `PRG` | 10-progression |

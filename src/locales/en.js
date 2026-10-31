@@ -77,6 +77,7 @@ export default {
   'error.invalidJson': 'The file is not JSON.',
   'error.notBackup': 'The file is not a backup of this app.',
   'error.backupNewer': 'The backup is of a newer version of the app. Update the app and import it again.',
+  'error.fitnotesFormat': 'The file is not a FitNotes export.',
   'error.nameRequired': 'Type a name.',
   'error.nameTooLong': 'At most {max} characters.',
   'error.commentTooLong': 'At most {max} characters.',

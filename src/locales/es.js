@@ -77,6 +77,7 @@ export default {
   'error.invalidJson': 'El archivo no es JSON.',
   'error.notBackup': 'El archivo no es una copia de esta aplicación.',
   'error.backupNewer': 'La copia es de una versión más nueva de la aplicación. Actualiza la aplicación y vuelve a importarla.',
+  'error.fitnotesFormat': 'El archivo no es una exportación de FitNotes.',
   'error.nameRequired': 'Escribe un nombre.',
   'error.nameTooLong': 'Máximo {max} caracteres.',
   'error.commentTooLong': 'Máximo {max} caracteres.',

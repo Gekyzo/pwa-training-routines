@@ -241,8 +241,34 @@ The domain of the app: exercises, routines and workouts. Its pure modules are `s
   `Weight Unit`, `Reps`, `Distance`, `Distance Unit` (`m`), `Time` (`m:ss` or `h:mm:ss`) and
   `Comment`, quoted as RFC 4180. A `weight_time` or `weight_distance` set fills the weight and the
   time, resp. the distance. The file has the name of the JSON export with `.csv`.
+- **DATA-3** A restore is **Replace all** (DATA-2) or **Merge**. Merge adds every category, exercise,
+  routine, workout, body entry and goal whose id the doc does not hold. A category, exercise or
+  routine whose name another entity of the doc holds (with no regard to case) is skipped and
+  counted; what refers to it points to the entity of the doc. The settings stay.
+- **DATA-4** **Import FitNotes** reads a CSV with the columns `Date`, `Exercise`, `Category`,
+  `Weight (kgs)`, `Weight (lbs)` or `Weight` (with `Weight Unit`), `Reps`, `Distance`,
+  `Distance Unit`, `Time` and `Comment`. A file with no `Date`, `Exercise`, weight or `Reps` column is
+  `error.fitnotesFormat`. `Time` is `h:mm:ss`, `m:ss` or seconds. A distance in `m`, `km`, `mi`, `ft`
+  or `yd` is stored in meters; no unit is meters. The rows of one date are one finished workout
+  with the id `fitnotes-<date>` and done sets of the kind `working`. A date whose id the doc holds
+  is skipped, so a second import adds nothing. The type of an exercise comes from the columns that
+  its rows fill. The preview counts workouts, sets, new exercises, new categories and skipped dates.
+  An exercise whose name an exercise of another type holds is a conflict: map it to an existing
+  exercise, or create it with the name plus ` (2)` (the first free number).
+- **DATA-5** The device key `<slug>.backup` holds `{ lastExport, workoutsAtExport }`; **Export JSON**
+  and **Export CSV** write it. A toast after a finish offers a backup when 10 workouts have been
+  finished since the last export, or 30 days have passed and one workout has been finished. With no
+  export yet, 10 finished workouts are enough. Never with no finished workout.
 - **DATA-6** **Delete all data** first asks `reset.exportFirst` when the doc has a workout; a yes
   writes the JSON export before the question of SET-2.
+
+## Integrations
+
+- **INT-1** A workout shares as text: the title, the date, and for each exercise one numbered line
+  for each done set (`100 kg × 5`), then the comment.
+- **INT-3** The search of the wger catalog is `https://wger.de/api/v2/exercise/search/?term=<q>&language=<en|es>`
+  (another language is `en`). The answer gives at most 20 suggestions with a name and a category, with
+  no duplicate name.
 
 ## Screen
 
