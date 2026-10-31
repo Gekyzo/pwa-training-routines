@@ -1,5 +1,6 @@
 import { FIELDS, SET_KINDS, checkNumber, checkComment, findById, localDate, sortedWorkouts } from '#training';
 import { nextTarget } from '#progression';
+import { shownWeight } from '#units';
 
 // Workouts: the start, the sets, the finish, the next day of a routine and the history of an
 // exercise (WO-1 to WO-19).
@@ -295,6 +296,14 @@ export const addWarmups = (state, workoutId, entryId, sets, newId = uuid) => {
   });
 };
 
+// SCR-10, WO-19: the weight that the plates and the warm-up start from, in the unit of the settings:
+// of the first working set not done that has a weight, else of the first working set with one.
+export const workingWeight = (state, entry) => {
+  const working = entry.sets.filter((s) => s.kind === 'working' && s.weight !== null);
+  const set = working.find((s) => !s.done) ?? working[0];
+  return set ? shownWeight(set.weight, set.unit, state.settings.unit) : null;
+};
+
 // ---- Supersets (WO-15) ----
 
 // The entries of 2 or more join one group, next to each other at the place of the first one, in
@@ -321,6 +330,13 @@ export const ungroupEntry = (state, workoutId, entryId) => {
 const groupOf = (workout, entryId) => {
   const entry = findById(workout.entries, entryId);
   return entry?.group ? workout.entries.filter((e) => e.group === entry.group) : null;
+};
+
+// SCR-9: the letter of each superset of the workout, A first, in the order of the list.
+export const groupLetters = (workout) => {
+  const letters = new Map();
+  for (const { group } of workout.entries) if (group !== null && !letters.has(group)) letters.set(group, String.fromCharCode(65 + letters.size));
+  return letters;
 };
 
 // True when the rest timer starts after a set of the entry: an entry with no group, or the last

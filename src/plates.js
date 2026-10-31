@@ -1,7 +1,18 @@
+import { convert } from '#units';
+
 // The plate calculator and the warm-up sets of a barbell (PR-6, PR-7). All weights are in one unit.
 
 const EPSILON = 1e-6;
 const tidy = (value) => Math.round(value * 100) / 100;
+
+const WEIGHT_TYPES = ['weight_reps', 'weight_time', 'weight_distance'];
+
+// PR-11: a barbell is an exercise with the `barbell` equipment and a type with a weight.
+export const isBarbell = (exercise) => exercise?.equipment === 'barbell' && WEIGHT_TYPES.includes(exercise.type);
+
+// PR-11: the bar of the exercise (in its unit), else the bar of the settings, in `unit`.
+export const barOf = (settings, exercise, unit) =>
+  exercise?.bar === null || exercise?.bar === undefined ? settings.bar[unit] : tidy(convert(exercise.bar, exercise.unit ?? unit, unit));
 
 // Greedy from the heaviest, with as many pairs as the target needs. Exact when nothing is left.
 const greedy = (perSide, plates) => {

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { emptyTraining, normalizeTraining } from '#training';
-import { setRule, nextTarget, roundLoad, itemHistory } from '#progression';
+import { setRule, nextTarget, roundLoad, itemHistory, amrapSets } from '#progression';
 import { startFromDay, editSet, markDone, finishWorkout } from '#workouts';
 
 const LINEAR = { type: 'linear', failAfter: 3, deload: 10 };
@@ -310,4 +310,14 @@ test('a success after a deload adds the increment to the deload weight (PRG-3)',
     session('2026-10-03', fives(90), { target: T(90) }),
   );
   assert.deepEqual([next(state).weight, next(state).state.failures], [92.5, 0]);
+});
+
+test('the AMRAP sets of an open workout are its working sets that the plan marks, read live (PRG-5, SCR-8)', () => {
+  const ws = (id, kind = 'working') => set(85, 5, { id, kind, done: false });
+  const open = { ...session('2026-10-05', [ws('w1', 'warmup'), ws('p1'), ws('p2'), ws('p3')], { finished: false }) };
+  const state = withWorkouts(base({ rule: PERCENT }), open);
+  assert.deepEqual([...amrapSets(state, open)], ['p3']);
+  assert.equal(amrapSets(state, { ...open, finished: '2026-10-05T19:00:00.000Z' }).size, 0);
+  assert.equal(amrapSets(withWorkouts(base({ rule: LINEAR }), open), open).size, 0);
+  assert.equal(amrapSets(state, { ...open, routineId: null }).size, 0);
 });

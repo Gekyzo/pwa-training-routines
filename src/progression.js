@@ -1,5 +1,5 @@
 import { cleanRule, findById, sortedWorkouts } from '#training';
-import { reachableBelow } from '#plates';
+import { reachableBelow, barOf } from '#plates';
 import { convert, toKg } from '#units';
 
 // Progression: the rule of an item and its next target, derived from the history at each read and
@@ -41,8 +41,7 @@ export const incrementOf = (exercise, unit) =>
 const platesLoad = (state, exercise, weight, unit) => {
   const plates = state.settings.plates[unit];
   if (exercise?.equipment !== 'barbell' || !plates.length) return null;
-  const bar = exercise.bar === null ? state.settings.bar[unit] : tidy(convert(exercise.bar, exercise.unit ?? unit, unit));
-  return reachableBelow(weight, bar, plates);
+  return reachableBelow(weight, barOf(state.settings, exercise, unit), plates);
 };
 
 // A weight of a target, from 0 to 1000: a barbell target rounds down to the plates (PR-6); another
@@ -151,4 +150,21 @@ export const nextTarget = (state, routineId, dayId, itemId) => {
   if (rule.type === 'percent') return percent(state, item, exercise, rule);
   const { weight, plan, failures } = progress(state, item, exercise, rule, own.unit);
   return { ...own, weight, plan, state: { failures, week: null, tm: null } };
+};
+
+// SCR-8: the ids of the sets of an open workout from a day that the plan of a percent rule marks
+// AMRAP (PRG-5). The plan is read now, so it is live: the n-th set that is not a warm-up takes the
+// n-th set of the plan. One read of the plan for each exercise.
+export const amrapSets = (state, workout) => {
+  const ids = new Set();
+  if (workout.finished !== null || !workout.routineId) return ids;
+  for (const entry of workout.entries) {
+    if (!entry.itemId) continue;
+    const plan = nextTarget(state, workout.routineId, workout.dayId, entry.itemId)?.plan;
+    if (!plan) continue;
+    entry.sets.filter((s) => s.kind !== 'warmup').forEach((s, index) => {
+      if (plan[index]?.amrap) ids.add(s.id);
+    });
+  }
+  return ids;
 };

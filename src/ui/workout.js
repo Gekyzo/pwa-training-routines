@@ -28,18 +28,20 @@ import {
   unskipEntry,
   substituteEntry,
   addWarmups,
+  workingWeight,
+  groupLetters,
 } from '#workouts';
 import { activeRoutines, todayDays } from '#routines';
-import { nextTarget } from '#progression';
+import { amrapSets } from '#progression';
 import { RECORDS, bestsOf } from '#bests';
-import { platesFor, warmupSets } from '#plates';
-import { BACKUP_KEY, backupDue, normalizeBackupInfo, workoutText } from '#backup';
-import { exportJson, exportFilename, keyOf } from '#storage';
+import { platesFor, warmupSets, barOf, isBarbell } from '#plates';
+import { backupDue, loadBackupInfo, workoutText } from '#backup';
+import { keyOf } from '#storage';
 import { start as startWatch, shown, finished as watchDone, stop as stopWatch, normalizeStopwatch } from '#stopwatch';
 import { restFor } from '#timer';
-import { convert, shownWeight } from '#units';
+import { shownWeight } from '#units';
 import { $, el, ui, state, storage, t, apply, render, showToast } from '#ui/context';
-import { icon, download } from '#ui/controls';
+import { icon, exportBackup } from '#ui/controls';
 import { openSheet, closeSheet, field, numberInput } from '#ui/sheet';
 import { openExerciseSheet } from '#ui/exercises';
 import { startRest, stop as stopRest, renderTimer } from '#ui/timer';
@@ -117,7 +119,8 @@ const finishWatch = () => {
   const seconds = stopWatch(watch, Date.now());
   const place = placeOf(setId);
   clearWatch();
-  if (place) apply(editSet(state, place.workout.id, place.entry.id, setId, { seconds: String(seconds) }));
+  // A stop before one second keeps the planned seconds.
+  if (place && seconds !== null) apply(editSet(state, place.workout.id, place.entry.id, setId, { seconds: String(seconds) }));
   else render();
 };
 
@@ -274,38 +277,9 @@ const recordsOf = (entry) => {
   return (set) => (set.done ? names.filter((name) => bests[name]?.set?.id === set.id) : []);
 };
 
-// The AMRAP mark of each working set, from the plan of the item while the workout is open (PRG-5).
-const amrapOf = (workout, entry) => {
-  if (workout.finished !== null || !entry.itemId || !workout.routineId) return () => false;
-  const plan = nextTarget(state, workout.routineId, workout.dayId, entry.itemId)?.plan ?? null;
-  if (!plan) return () => false;
-  const working = entry.sets.filter((s) => s.kind !== 'warmup');
-  return (set) => Boolean(plan[working.indexOf(set)]?.amrap);
-};
-
 // ---- Exercises of a workout ----
 
-// The letter of each superset of the workout, in the order of the list (SCR-9).
-const groupLetters = (workout) => {
-  const letters = new Map();
-  for (const { group } of workout.entries) if (group !== null && !letters.has(group)) letters.set(group, String.fromCharCode(65 + letters.size));
-  return letters;
-};
-
 const exerciseOf = (entry) => findById(state.exercises, entry.exerciseId);
-
-// PR-6: the bar of a barbell exercise in the unit of the settings.
-const barOf = (exercise, unit) =>
-  exercise.bar === null || exercise.bar === undefined ? state.settings.bar[unit] : Math.round(convert(exercise.bar, exercise.unit ?? unit, unit) * 100) / 100;
-
-const isBarbell = (exercise) => exercise?.equipment === 'barbell' && FIELDS[exercise.type].includes('weight');
-
-// The weight that the plates and the warm-up start from: the first working set not done, else the first working set.
-const workingWeight = (entry) => {
-  const working = entry.sets.filter((s) => s.kind === 'working' && s.weight !== null);
-  const set = working.find((s) => !s.done) ?? working[0];
-  return set ? shownWeight(set.weight, set.unit, state.settings.unit) : null;
-};
 
 const parseLoad = (text) => {
   const value = Number(String(text).trim().replace(',', '.'));
@@ -315,7 +289,7 @@ const parseLoad = (text) => {
 // SCR-10: the plates of a side for the load of the box (PR-6).
 const platesText = (exercise, load) => {
   const unit = state.settings.unit;
-  const bar = barOf(exercise, unit);
+  const bar = barOf(state.settings, exercise, unit);
   const found = platesFor(load, bar, state.settings.plates[unit]);
   if ('load' in found) {
     if (!found.plates.length) return [t('plates.barOnly', { bar: weightText(bar, unit) })];
@@ -335,7 +309,7 @@ const openPlates = (entry) => {
     const load = parseLoad(text);
     result.replaceChildren(...(load === null ? [] : platesText(exercise, load).map((line) => el('span', { textContent: line }))));
   };
-  const input = numberInput('load', workingWeight(entry), { decimal: true, labelKey: 'plates.load' });
+  const input = numberInput('load', workingWeight(state, entry), { decimal: true, labelKey: 'plates.load' });
   input.addEventListener('input', (event) => show(event.target.value));
   show(input.value);
   openSheet({ title: `${t('workout.plates')} · ${exercise.name}`, body: [field('plates.load', input), result] });
@@ -345,7 +319,7 @@ const openPlates = (entry) => {
 const addWarmupSets = (workout, entry) => {
   const exercise = exerciseOf(entry);
   const unit = state.settings.unit;
-  const sets = warmupSets(workingWeight(entry), barOf(exercise, unit), state.settings.plates[unit]);
+  const sets = warmupSets(workingWeight(state, entry), barOf(state.settings, exercise, unit), state.settings.plates[unit]);
   closeSheet();
   if (!sets.length) {
     showToast(t('toast.noWarmup'));
@@ -389,14 +363,16 @@ const runAndClose = (result, options) => {
 const openEntryMenu = (workout, entry) => {
   const exercise = exerciseOf(entry);
   const done = entry.sets.some((s) => s.done);
+  const open = workout.finished === null;
   const others = workout.entries.some((e) => e.id !== entry.id && (entry.group === null || e.group !== entry.group));
+  // A finished workout keeps what was done: no superset, skip, substitute or warm-up (SCR-9).
   const body = [
-    ...(others ? [menuEntry('workout.superset', () => pickSuperset(workout, entry))] : []),
+    ...(open && others ? [menuEntry('workout.superset', () => pickSuperset(workout, entry))] : []),
     ...(entry.group !== null ? [menuEntry('workout.ungroup', () => runAndClose(ungroupEntry(state, workout.id, entry.id)))] : []),
-    ...(entry.skipped ? [menuEntry('workout.unskip', () => runAndClose(unskipEntry(state, workout.id, entry.id)))] : []),
-    ...(!entry.skipped && !done ? [menuEntry('workout.skip', () => runAndClose(skipEntry(state, workout.id, entry.id)))] : []),
-    menuEntry('workout.substitute', () => pickSubstitute(workout, entry)),
-    ...(isBarbell(exercise) && exercise.type === 'weight_reps' ? [menuEntry('workout.warmups', () => addWarmupSets(workout, entry))] : []),
+    ...(open && entry.skipped ? [menuEntry('workout.unskip', () => runAndClose(unskipEntry(state, workout.id, entry.id)))] : []),
+    ...(open && !entry.skipped && !done ? [menuEntry('workout.skip', () => runAndClose(skipEntry(state, workout.id, entry.id)))] : []),
+    ...(open ? [menuEntry('workout.substitute', () => pickSubstitute(workout, entry))] : []),
+    ...(open && isBarbell(exercise) && exercise.type === 'weight_reps' ? [menuEntry('workout.warmups', () => addWarmupSets(workout, entry))] : []),
     ...(isBarbell(exercise) ? [menuEntry('workout.plates', () => openPlates(entry))] : []),
     menuEntry('workout.removeExercise', () => runAndClose(deleteEntry(state, workout.id, entry.id), { undoText: t('toast.entryRemoved') })),
   ];
@@ -413,7 +389,7 @@ const noteLines = (workout, entry) => {
   return lines;
 };
 
-const entryNodes = (workout, entry, letters) => {
+const entryNodes = (workout, entry, letters, amraps) => {
   const menu = el('button', { className: 'button icon', type: 'button', onclick: () => openEntryMenu(workout, entry) }, [icon('more')]);
   menu.setAttribute('aria-label', t('workout.menu', { name: exerciseName(entry.exerciseId) }));
   const pills = [
@@ -427,11 +403,10 @@ const entryNodes = (workout, entry, letters) => {
   head.dataset.entry = entry.id;
   const lines = noteLines(workout, entry);
   const records = recordsOf(entry);
-  const amrap = amrapOf(workout, entry);
   return [
     head,
     ...(lines.length ? [el('li', { className: 'workout-note' }, lines.map((line) => el('span', { textContent: line })))] : []),
-    ...entry.sets.map((set, index) => setRow(workout, entry, set, index, { records: records(set), amrap: amrap(set) })),
+    ...entry.sets.map((set, index) => setRow(workout, entry, set, index, { records: records(set), amrap: amraps.has(set.id) })),
     ...(entry.skipped ? [] : [el('li', { className: 'workout-actions' }, [
       el('button', { className: 'button tonal', type: 'button', textContent: t('workout.addSet'), onclick: () => apply(addSet(state, workout.id, entry.id)) }),
     ])]),
@@ -521,27 +496,9 @@ const share = async (workout) => {
   }
 };
 
-const loadBackupInfo = () => {
-  try {
-    return normalizeBackupInfo(JSON.parse(storage?.getItem(BACKUP_KEY) ?? 'null'));
-  } catch {
-    return null;
-  }
-};
-
-// DATA-5: the export of the reminder writes the device key, as Export JSON does.
-const exportNow = () => {
-  const now = new Date();
-  download(exportFilename(now), exportJson(state));
-  try {
-    storage?.setItem(BACKUP_KEY, JSON.stringify({ lastExport: now.toISOString(), workoutsAtExport: finishedCount() }));
-  } catch {
-    // The reminder comes again after the next finish.
-  }
-};
-
-// WO-14: an open workout whose last done set is over 4 hours old finishes at that set.
-const closeStale = () => {
+// WO-14, SCR-7: an open workout whose last done set is over 4 hours old finishes at that set. It runs
+// before a render, at the start and when the page comes back, never inside one.
+export const closeStale = () => {
   const result = autoClose(state, new Date());
   if (result.state === state) return false;
   stopRest();
@@ -560,7 +517,6 @@ const keepFocus = (build) => {
 export const renderWorkout = () => {
   $('workout').hidden = ui.view !== 'workout';
   if (ui.view !== 'workout') return;
-  if (closeStale()) return;
   const workout = current();
   if (ui.workoutId && !workout) ui.workoutId = null;
   $('workout-start').hidden = Boolean(workout);
@@ -584,7 +540,8 @@ export const renderWorkout = () => {
   $('workout-finish').hidden = !open;
   $('workout-repeat').hidden = open;
   const letters = groupLetters(workout);
-  keepFocus(() => $('workout-entries').replaceChildren(...workout.entries.flatMap((entry) => entryNodes(workout, entry, letters))));
+  const amraps = amrapSets(state, workout);
+  keepFocus(() => $('workout-entries').replaceChildren(...workout.entries.flatMap((entry) => entryNodes(workout, entry, letters, amraps))));
   if (open) renderTimer();
   else $('rest-timer').hidden = true;
 };
@@ -607,7 +564,7 @@ export const bind = () => {
     if (!apply(result)) return;
     stopRest();
     if (result.deleted) showToast(t('toast.workoutEmpty'));
-    else if (backupDue(loadBackupInfo(), finishedCount(), new Date())) showToast(t('toast.backupDue'), { action: { label: t('settings.export'), run: exportNow } });
+    else if (backupDue(loadBackupInfo(storage), finishedCount(), new Date())) showToast(t('toast.backupDue'), { action: { label: t('settings.export'), run: exportBackup } });
     else showToast(t('toast.workoutFinished'));
   });
   $('workout-repeat').addEventListener('click', () => openRepeat(current()));
@@ -624,6 +581,6 @@ export const bind = () => {
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) return;
     showWatch();
-    if (ui.view === 'workout') render();
+    closeStale();
   });
 };

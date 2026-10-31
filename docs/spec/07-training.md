@@ -221,6 +221,8 @@ The domain of the app: exercises, routines and workouts. Its pure modules are `s
 - **PR-11** A target of a `barbell` exercise rounds down to a load the plates reach (PR-6): the bar
   of the exercise, else the bar of the settings, and the plates of the settings. Under the bar, or with
   no plates, the increment rounds it as for other equipment.
+  Plates and warm-up sets (SCR-9) are for an exercise with the equipment `barbell` and a type with
+  a weight.
 - **PR-8** A set keeps the unit of its weight. Records compare weights in kg. The screen shows a
   weight in the unit of the settings, rounded to one decimal; a change of the unit rewrites no set.
 
@@ -235,7 +237,8 @@ The domain of the app: exercises, routines and workouts. Its pure modules are `s
 - **TMR-3** **+15 s** and **−15 s** change the time left, never below zero. **Skip** stops the timer.
 - **TMR-4** A set of a type with seconds (`time`, `distance_time`, `weight_time`) has a stopwatch.
   With planned seconds it counts down from them and stops at zero; else it counts up. The stop
-  writes the seconds to the set (WO-4): the time since the start, at most the planned seconds.
+  writes the seconds to the set (WO-4): the time since the start, at most the planned seconds. A
+  stop before one second writes nothing, so the set keeps its seconds.
   One stopwatch runs at a time; a start on another set stops the one that runs.
 - **TMR-5** The stopwatch stores its set, its start as a time and its planned seconds in
   `pwa-training-routines.stopwatch`, a state of the device that does not sync, so a reload keeps it.
@@ -314,23 +317,29 @@ The domain of the app: exercises, routines and workouts. Its pure modules are `s
   has the name, the category or a new one, the type and the rest.
 - **SCR-6** **+** makes a routine in Routines and an exercise in Exercises. `Escape` closes the
   sheet, else the open detail, else the past workout.
-- **SCR-7** At each render of Workout, an open workout whose last done set is over 4 hours old
-  finishes (WO-14) and a toast says so. A start of a workout asks for the persistent storage (DATA-7).
+- **SCR-7** At the start of the app and when the page comes back into view, before the render, an
+  open workout whose last done set is over 4 hours old finishes (WO-14) and a toast says so. A
+  render never finishes a workout. A start of a workout asks for the persistent storage (DATA-7).
 - **SCR-8** The kind of a set shows as its number among the sets that are not warm-ups for
   `working`, else as a letter (`W`, `D`, `F`);
   a tap gives the next kind (WO-11). With an effort scale (WO-12) each set has an effort box. A
   done set that holds a record shows a mark with the name of the record (PR-4). In an open
-  workout from a day, the AMRAP set of a percent rule (PRG-5) has a mark, and each exercise shows
-  its target (WO-18). A set of a type with seconds has the stopwatch (TMR-4).
+  workout from a day, each exercise shows its target (WO-18), and the AMRAP set of a percent rule
+  (PRG-5) has a mark. The doc stores no AMRAP mark: each render reads the plan of the item once,
+  so the mark is live (an edit of the rule moves it), and the n-th set that is not a warm-up takes
+  the n-th set of the plan. A set of a type with seconds has the stopwatch (TMR-4).
 - **SCR-9** The head of an exercise shows its name, the mark of its superset (`Superset A`) or of a
   skip, and its count of done sets; below it the target, the exercise that it replaces and the
   notes of the exercise (EX-8). Its menu holds the secondary actions: **Superset with…** (a picker
   of the other exercises, WO-15), **Leave the superset**, **Skip exercise** or **Do the exercise**
   (WO-17), **Substitute with…** (a picker of the exercises that are not archived, of any type),
-  **Add warm-up sets** (WO-19) and **Plates** for a `barbell` exercise, and **Remove exercise**. In
+  **Add warm-up sets** (WO-19) and **Plates** for a `barbell` exercise, and **Remove exercise**. A
+  finished workout has no **Superset with…**, **Skip exercise**, **Do the exercise**, **Substitute
+  with…** or **Add warm-up sets**. In
   a superset, a done set moves the view to the next exercise of the round.
 - **SCR-10** **Plates** opens a sheet with a load box, filled with the weight of the first working
-  set not done. It shows the plates of a side (PR-6), the bar alone, or the nearest loads under and
+  set not done that has a weight, else of the first working set with one, in the unit of the
+  settings. **Add warm-up sets** starts from the same weight. It shows the plates of a side (PR-6), the bar alone, or the nearest loads under and
   over the load. The bar is the bar of the exercise, else of the settings.
 - **SCR-11** **Repeat** opens a sheet with the date (today) and **Copy the values** (on); **Start**
   starts the workout (WO-16). **Share** gives the text of INT-1 to the share sheet of the phone, else

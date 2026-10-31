@@ -31,6 +31,8 @@ import {
   unskipEntry,
   substituteEntry,
   addWarmups,
+  workingWeight,
+  groupLetters,
 } from '#workouts';
 
 const DAY1 = new Date(2026, 9, 1, 18, 0);
@@ -510,4 +512,21 @@ test('warm-up sets go at the end with no working set; none changes nothing (WO-1
   assert.deepEqual(entryOf(state, 'w1', 'n1').sets.map((s) => s.kind), ['failure', 'warmup']);
   assert.equal(addWarmups(state, 'w1', 'nope', [{ weight: 20, reps: 10 }]).error.key, 'error.entryMissing');
   assert.equal(addWarmups(state, 'nope', 'n1', [{ weight: 20, reps: 10 }]).error.key, 'error.workoutMissing');
+});
+
+test('the working weight is of the first working set not done, else of the first one, in the unit of the settings (SCR-10)', () => {
+  const s = (id, weight, extra = {}) => ({ id, weight, unit: 'kg', reps: 5, seconds: null, meters: null, done: false, comment: '', kind: 'working', effort: null, at: null, ...extra });
+  const kg = base();
+  const lb = { ...kg, settings: { ...kg.settings, unit: 'lb' } };
+  assert.equal(workingWeight(kg, { sets: [s('a', 40, { kind: 'warmup' }), s('b', 100, { done: true }), s('c', 105)] }), 105);
+  assert.equal(workingWeight(kg, { sets: [s('a', 40, { kind: 'warmup' }), s('b', 100, { done: true })] }), 100);
+  assert.equal(workingWeight(kg, { sets: [s('a', null), s('b', 90, { kind: 'drop' })] }), null);
+  assert.equal(workingWeight(lb, { sets: [s('a', 100)] }), 220.5);
+});
+
+test('each superset has a letter in the order of the list (WO-15, SCR-9)', () => {
+  const e = (id, group) => ({ id, group });
+  const letters = groupLetters({ entries: [e('1', null), e('2', 'g2'), e('3', 'g2'), e('4', 'g1'), e('5', 'g1')] });
+  assert.deepEqual([...letters], [['g2', 'A'], ['g1', 'B']]);
+  assert.equal(groupLetters({ entries: [] }).size, 0);
 });

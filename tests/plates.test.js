@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { platesFor, warmupSets } from '#plates';
+import { platesFor, warmupSets, barOf, isBarbell } from '#plates';
 
 const KG = [25, 20, 15, 10, 5, 2.5, 1.25];
 const LB = [45, 35, 25, 10, 5, 2.5];
@@ -58,4 +58,22 @@ test('warmupSets of a working weight at or under the bar is empty', () => {
   assert.deepEqual(warmupSets(20, 20, KG), []);
   assert.deepEqual(warmupSets(0, 20, KG), []);
   assert.deepEqual(warmupSets(null, 20, KG), []);
+});
+
+const SETTINGS = { bar: { kg: 20, lb: 45 } };
+
+test('a barbell is an exercise with the barbell equipment and a weight (PR-11)', () => {
+  assert.equal(isBarbell({ equipment: 'barbell', type: 'weight_reps' }), true);
+  assert.equal(isBarbell({ equipment: 'barbell', type: 'weight_time' }), true);
+  assert.equal(isBarbell({ equipment: 'barbell', type: 'reps' }), false);
+  assert.equal(isBarbell({ equipment: 'dumbbell', type: 'weight_reps' }), false);
+  assert.equal(isBarbell(null), false);
+});
+
+test('the bar is of the exercise in its unit, else of the settings, in the unit asked (PR-11)', () => {
+  assert.equal(barOf(SETTINGS, { bar: null, unit: null }, 'kg'), 20);
+  assert.equal(barOf(SETTINGS, { bar: null, unit: null }, 'lb'), 45);
+  assert.equal(barOf(SETTINGS, { bar: 15, unit: 'kg' }, 'kg'), 15);
+  assert.equal(barOf(SETTINGS, { bar: 35, unit: 'lb' }, 'kg'), 15.88);
+  assert.equal(barOf(SETTINGS, { bar: 10, unit: null }, 'kg'), 10);
 });

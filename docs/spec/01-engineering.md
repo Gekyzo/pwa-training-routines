@@ -20,11 +20,11 @@
 | `src/training.js` | The doc of the app, its validation, its orders, the settings and the shared checks (TRN-1 to TRN-6) | `config` |
 | `src/exercises.js` | Categories and exercises, and the common exercises (EX-1 to EX-8) | `training` |
 | `src/routines.js` | Routines, their days and their items, copies, weekdays and templates (RT-1, RT-5, RT-7, RT-8) | `exercises`, `training` |
-| `src/workouts.js` | Workouts: the start, the sets, the finish, the next day and the history (RT-3, WO-1 to WO-10) | `progression`, `training` |
+| `src/workouts.js` | Workouts: the start, the sets, the finish, the next day and the history (RT-3, WO-1 to WO-19) | `progression`, `training`, `units` |
 | `src/progression.js` | The rule of progression of an item and its next target from the history (PRG-1 to PRG-5) | `plates`, `training`, `units` |
 | `src/units.js` | The conversion of a weight between kg and lb, and the clock text (PR-8) | nothing |
 | `src/bests.js` | The personal records of an exercise, the e1RM, the rep maxes, the volume and the effective load (PR-1 to PR-5, PR-9, PR-10) | `body`, `training`, `units` |
-| `src/plates.js` | The plates of a barbell load and the warm-up sets (PR-6, PR-7) | nothing |
+| `src/plates.js` | The plates of a barbell load, the bar and the warm-up sets (PR-6, PR-7, PR-11) | `units` |
 | `src/body.js` | The body log, the measures, the relative strength and the DOTS (BODY-1 to BODY-3, PR-9) | `bests`, `exercises`, `training`, `units` |
 | `src/insights.js` | The series, the calendar, the consistency, the sets a week, the stalls and the comparison (STAT-1 to STAT-6) | `bests`, `progression`, `training`, `units` |
 | `src/goals.js` | The goals and their progress (GOAL-1, GOAL-2) | `bests`, `body`, `insights`, `training`, `units` |
@@ -37,7 +37,7 @@
 | `src/particles.js` | The particles of a picture and their place in time (optional) | nothing |
 | `src/onboarding.js` | The show rule and the page steps of the walkthrough (optional) | nothing |
 | `src/ui/context.js` | The values that the views share, the toast, `render`, `commit` and `apply` | `i18n`, `onboarding`, `storage`, `training` |
-| `src/ui/controls.js` | The icon builder, the side-action button and the download of a file | `ui/context` |
+| `src/ui/controls.js` | The icon builder, the side-action button, the download of a file and the JSON export with its backup time (DATA-5) | `backup`, `storage`, `ui/context` |
 | `src/ui/update.js` | The version line, the check, the refresh and the update toast | `version`, `i18n`, `ui/context` |
 | `src/ui/install.js` | The Install button | `install`, `ui/context` |
 | `src/ui/nav.js` | The navigation, the change and the slide of a section | `modules`, `sections`, `ui/context`, `ui/dust`, `ui/update` |

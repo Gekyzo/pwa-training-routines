@@ -28,6 +28,11 @@ test('a set with planned seconds counts down and stops at them (TMR-4)', () => {
   assert.equal(stop(watch, T0 + 90000), 60);
 });
 
+test('a stop before one second gives null, so the set keeps its seconds (TMR-4)', () => {
+  assert.equal(stop(start('s1', T0, 60), T0 + 400), null);
+  assert.equal(stop(start('s1', T0), T0), null);
+});
+
 test('zero or no planned seconds is a stopwatch (TMR-4)', () => {
   assert.equal(start('s1', T0, 0).from, null);
   assert.equal(start('s1', T0, null).from, null);

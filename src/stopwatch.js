@@ -15,8 +15,13 @@ export const shown = (watch, now) => (watch.from === null ? elapsed(watch, now) 
 // True when a countdown reached zero.
 export const finished = (watch, now) => watch.from !== null && elapsed(watch, now) >= watch.from;
 
-// The seconds that the set takes at the stop: a countdown gives at most its planned seconds.
-export const stop = (watch, now) => (watch.from === null ? elapsed(watch, now) : Math.min(watch.from, elapsed(watch, now)));
+// The seconds that the set takes at the stop: a countdown gives at most its planned seconds. A stop
+// before one second gives null: the set keeps its seconds.
+export const stop = (watch, now) => {
+  const seconds = elapsed(watch, now);
+  if (seconds === 0) return null;
+  return watch.from === null ? seconds : Math.min(watch.from, seconds);
+};
 
 // A stored stopwatch, or null.
 export const normalizeStopwatch = (data) => {

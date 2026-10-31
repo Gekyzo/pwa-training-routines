@@ -105,6 +105,26 @@ export const backupDue = (info, finishedCount, now) => {
   return since >= 1 && now.getTime() - Date.parse(clean.lastExport) >= BACKUP_DAYS * DAY_MS;
 };
 
+// DATA-5: the backup info of the device, or null. `storage` is the localStorage object (ENG-4).
+export const loadBackupInfo = (storage) => {
+  try {
+    return normalizeBackupInfo(JSON.parse(storage?.getItem(BACKUP_KEY) ?? 'null'));
+  } catch {
+    return null;
+  }
+};
+
+// DATA-5: an export writes its time and the count of finished workouts. False when the save fails.
+export const saveBackupInfo = (storage, state, now) => {
+  try {
+    const workoutsAtExport = state.workouts.filter((w) => w.finished !== null).length;
+    storage.setItem(BACKUP_KEY, JSON.stringify({ lastExport: now.toISOString(), workoutsAtExport }));
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 const number = (value) => String(Math.round(value * 100) / 100);
 
 const setText = (set) => {

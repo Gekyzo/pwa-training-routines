@@ -1,4 +1,6 @@
-import { el } from '#ui/context';
+import { exportJson, exportFilename } from '#storage';
+import { saveBackupInfo } from '#backup';
+import { el, state, storage } from '#ui/context';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -36,4 +38,11 @@ export const iconButton = (name, label, onClick, { variant = '' } = {}) => {
   const button = el('button', { type: 'button', className: ['swipe-action', variant].join(' '), title: label, onclick: onClick }, [icon(name)]);
   button.setAttribute('aria-label', label);
   return button;
+};
+
+// DATA-2, DATA-5: the JSON export, which also writes the time of the backup on the device.
+export const exportBackup = () => {
+  const now = new Date();
+  download(exportFilename(now), exportJson(state));
+  if (storage) saveBackupInfo(storage, state, now);
 };

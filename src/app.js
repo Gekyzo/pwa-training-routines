@@ -1,7 +1,7 @@
 import { $, ui, storage, t, setRender, render, showToast, hideToast, toastAction, clickGuardUntil } from '#ui/context';
 import { bind as bindNav, renderNav } from '#ui/nav';
 import { bind as bindSheet, renderSheet, closeSheet } from '#ui/sheet';
-import { bind as bindWorkout, renderWorkout } from '#ui/workout';
+import { bind as bindWorkout, renderWorkout, closeStale } from '#ui/workout';
 import { bind as bindTimer } from '#ui/timer';
 import { bind as bindRoutines, renderRoutines, openRoutineSheet } from '#ui/routines';
 import { bind as bindExercises, renderExercises, openExerciseSheet } from '#ui/exercises';
@@ -94,6 +94,8 @@ $('toast-action').addEventListener('click', () => {
   action?.run();
 });
 
+// WO-14: a stale open workout closes before applyLanguage renders the start.
+closeStale();
 applyLanguage();
 if (ui.onboarding !== null) $('onboarding-next').focus();
 startAccount(oauth);

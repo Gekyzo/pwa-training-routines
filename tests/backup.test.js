@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { emptyTraining, normalizeTraining } from '#training';
-import { BACKUP_KEY, mergeDocs, backupDue, normalizeBackupInfo, workoutText } from '#backup';
+import { BACKUP_KEY, mergeDocs, backupDue, normalizeBackupInfo, workoutText, loadBackupInfo, saveBackupInfo } from '#backup';
 
 const set = (id, extra) => ({ id, weight: null, unit: 'kg', reps: null, seconds: null, meters: null, done: true, comment: '', kind: 'working', effort: null, at: null, ...extra });
 const ex = (id, name, extra) => ({ id, name, categoryId: null, type: 'weight_reps', rest: null, archived: false, ...extra });
@@ -111,4 +111,26 @@ test('the text of a workout', () => {
   assert.equal(workoutText(s, 'w', t, 'lb').split('\n')[4], '1. 220.5 lb × 5');
   assert.equal(workoutText(s, 'nope', t, 'kg'), '');
   assert.equal(workoutText({ ...s, workouts: [workout('w', [])] }, 'w', t, 'kg'), 'workout.free\n2026-10-01');
+});
+
+const fakeStorage = (data = {}) => ({
+  getItem: (key) => data[key] ?? null,
+  setItem: (key, value) => { data[key] = String(value); },
+  data,
+});
+
+test('the backup info is saved with the count of finished workouts, and read back (DATA-5)', () => {
+  const storage = fakeStorage();
+  const state = { ...emptyTraining(), workouts: [workout('w1', []), workout('w2', [], { finished: null }), workout('w3', [])] };
+  assert.equal(saveBackupInfo(storage, state, new Date('2026-10-31T10:00:00.000Z')), true);
+  assert.deepEqual(loadBackupInfo(storage), { lastExport: '2026-10-31T10:00:00.000Z', workoutsAtExport: 2 });
+});
+
+test('a missing, broken or failing backup info reads as null, and a failed save is false (DATA-5)', () => {
+  assert.equal(loadBackupInfo(fakeStorage()), null);
+  assert.equal(loadBackupInfo(fakeStorage({ [BACKUP_KEY]: '{oops' })), null);
+  assert.equal(loadBackupInfo(null), null);
+  const broken = { getItem: () => { throw new Error('x'); }, setItem: () => { throw new Error('x'); } };
+  assert.equal(loadBackupInfo(broken), null);
+  assert.equal(saveBackupInfo(broken, emptyTraining(), new Date()), false);
 });
