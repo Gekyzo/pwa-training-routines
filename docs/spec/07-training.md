@@ -185,13 +185,36 @@ The domain of the app: exercises, routines and workouts. Its pure modules are `s
 ## Records and units
 
 - **PR-1** The records of an exercise come from its done sets, at each read; nothing stores them.
-  `weight_reps` has the heaviest weight, the most reps, the best set (weight × reps) and the best
-  workout (the sum of weight × reps); `reps` has the most reps and the best workout (the sum of
+  `weight_reps` has the heaviest weight, the most reps, the best set (weight × reps), the best e1RM
+  (PR-2) and the best workout (the sum of weight × reps); `reps` has the most reps and the best workout (the sum of
   reps); `time` the longest time; `distance_time` the farthest distance and the longest time;
   `weight_time` the heaviest weight and the longest time; `weight_distance` the heaviest weight
   and the farthest distance. Each
   record names its set and its workout. A value of zero makes no record, and a tie keeps the first
   record.
+- **PR-2** The e1RM of a set is `weight × (1 + reps / 30)` (Epley) or `weight × 36 / (37 − reps)`
+  (Brzycki), by `settings.formula`. One rep gives the weight. A set with more than 12 reps, or with
+  a weight of zero or less, has none. `weight_reps` has the best e1RM as a record after the best
+  set.
+- **PR-3** The rep maxes of an exercise are, for each rep count from 1 to 15, the heaviest weight
+  (in kg) of a done set with exactly that many reps, with its set and its workout. A count with no
+  set has none. A tie keeps the first.
+- **PR-4** A set holds a record when it is the set of that record now (PR-1, PR-2). The screen marks
+  it. A tie is not a record.
+- **PR-5** The volume of a done set of `weight_reps` is weight × reps in kg, and twice that for a
+  unilateral exercise. Volume sums by workout, by exercise and by category (a deleted category or
+  exercise counts as no category).
+- **PR-6** The plate calculator gives the plates of a side for a load: greedy from the heaviest
+  plate, with as many pairs as needed. A load that no plates reach gives the nearest reachable load
+  under it and over it. A load under the bar gives the bar as the load over it.
+- **PR-7** The warm-up of a working weight is the bar for 10 reps, then 40, 60 and 80 % of it for
+  8, 5 and 3 reps, each rounded down to a reachable load (PR-6). A load at or under the bar, and a
+  load that repeats, drops out. A working weight at or under the bar has no warm-up.
+- **PR-9** The effective load of a set of an exercise with bodyweight equipment and a weight is the
+  body weight of the date of the workout plus the weight of the set; the latest body weight on or
+  before that date counts. Without one, the weight of the set alone counts and the load is partial.
+  Records (PR-1 to PR-3) and volume (PR-5) use the effective load of such an exercise.
+- **PR-10** A warm-up set makes no record and adds no volume. A working, drop or failure set does.
 - **PR-8** A set keeps the unit of its weight. Records compare weights in kg. The screen shows a
   weight in the unit of the settings, rounded to one decimal; a change of the unit rewrites no set.
 

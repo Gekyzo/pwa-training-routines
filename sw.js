@@ -15,6 +15,8 @@ const SHELL = [
   './src/csv.js',
   './src/timer.js',
   './src/bests.js',
+  './src/plates.js',
+  './src/body.js',
   './src/units.js',
   './src/workouts.js',
   './src/progression.js',
