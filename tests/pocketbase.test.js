@@ -133,21 +133,53 @@ const recordUnique = reply(400, {
   data: { key: { code: 'validation_not_unique' }, kind: { code: 'validation_not_unique' }, owner: { code: 'validation_not_unique' } },
 });
 
-test('pull follows every page, sorts by updated and sends the cursor in the filter', async () => {
+test('pull sorts by updated and id, sends the cursor, and asks for the records after the last one of a full page', async () => {
+  const full = Array.from({ length: 500 }, (_, n) => serverRow({ id: `a${String(n).padStart(3, '0')}`, updated: '2026-10-24 07:00:00.000Z' }));
   const { calls, client } = fake(
-    reply(200, { items: [serverRow()], page: 1, totalPages: 2 }),
-    reply(200, { items: [serverRow({ id: 'r2', key: 'b' })], page: 2, totalPages: 2 }),
+    reply(200, { items: full, page: 1, totalPages: 2 }),
+    reply(200, { items: [serverRow({ id: 'r2', key: 'b' })], page: 1, totalPages: 1 }),
   );
   const pulled = await client.pull('T', '2026-10-24 07:00:00.000Z', OWNER);
   assert.equal(calls.length, 2);
   assert.equal(calls[0].url.pathname, RECORDS);
   assert.equal(calls[0].url.searchParams.get('filter'), 'owner = "user1" && updated >= "2026-10-24 07:00:00.000Z"');
-  assert.equal(calls[0].url.searchParams.get('sort'), 'updated');
+  assert.equal(calls[0].url.searchParams.get('sort'), 'updated,id');
   assert.equal(calls[0].url.searchParams.get('perPage'), '500');
-  assert.equal(calls[1].url.searchParams.get('page'), '2');
+  assert.equal(calls[1].url.searchParams.get('filter'), 'owner = "user1" && (updated > "2026-10-24 07:00:00.000Z" || (updated = "2026-10-24 07:00:00.000Z" && id > "a499"))');
+  assert.deepEqual([calls[0].url.searchParams.get('page'), calls[1].url.searchParams.get('page')], ['1', '1']);
   assert.equal(calls[0].headers.Authorization, 'T');
-  assert.deepEqual(pulled.map((r) => r.id), ['r1', 'r2']);
+  assert.equal(pulled.length, 501);
   assert.deepEqual(Object.keys(pulled[0]), ['id', 'kind', 'key', 'data', 'deleted', 'updated']);
+});
+
+// A server that answers the pull filters from its rows, so a test can edit a row between pages.
+const rowServer = (rows, between) => {
+  let served = 0;
+  const fetch = async (url) => {
+    const query = new globalThis.URL(url).searchParams;
+    const filter = query.get('filter');
+    const after = filter.match(/\(updated > "([^"]+)" \|\| \(updated = "[^"]+" && id > "([^"]+)"\)\)/);
+    const since = filter.match(/updated >= "([^"]+)"/);
+    const page = Number(query.get('page'));
+    const perPage = Number(query.get('perPage'));
+    const keep = rows
+      .filter((r) => (after ? r.updated > after[1] || (r.updated === after[1] && r.id > after[2]) : since ? r.updated >= since[1] : true))
+      .sort((a, b) => (a.updated === b.updated ? (a.id < b.id ? -1 : 1) : a.updated < b.updated ? -1 : 1));
+    const items = keep.slice((page - 1) * perPage, page * perPage);
+    served += 1;
+    if (served === 1) between(rows);
+    return reply(200, { items, page, totalPages: Math.ceil(keep.length / perPage) });
+  };
+  return createClient({ url: `${URL_}/`, fetch });
+};
+
+test('a record edited on another device during the pull skips no other record', async () => {
+  const at = (n) => `2026-10-24 08:00:${String(n).padStart(2, '0')}.000Z`;
+  const rows = Array.from({ length: 600 }, (_, n) => serverRow({ id: `r${String(n).padStart(3, '0')}`, key: `k${n}`, updated: at(Math.floor(n / 20)) }));
+  // After the first page, the first row moves to the end: numbered pages then skip one row.
+  const client = rowServer(rows, (all) => { all[0] = { ...all[0], updated: at(59) }; });
+  const ids = new Set((await client.pull('T', '', OWNER)).map(({ id }) => id));
+  assert.equal(rows.filter(({ id }) => !ids.has(id)).length, 0);
 });
 
 test('pull with an empty cursor filters by the owner only, and stops with no totalPages', async () => {

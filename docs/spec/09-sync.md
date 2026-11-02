@@ -65,7 +65,9 @@ and view rules. The migration lives in `pwa-server`; this app only reads and wri
   closed. It closes at the `offline` event, at an auth error, at a logout and at a reset. It opens
   only for a finished login of an approved account.
 - **SYNC-4** A pull asks for each record of the owner with `updated` at or after the cursor, oldest
-  first, page by page; an empty cursor pulls every record. A record pulled twice is harmless. Every
+  first by `updated` then `id`; an empty cursor pulls every record. Each next page asks for the
+  records after the last one received, not for a page number, so a record edited during the pull is
+  read again and none is skipped. A record pulled twice is harmless. Every
   request for records names the owner: with no owner the client sends nothing and answers an
   auth error.
 

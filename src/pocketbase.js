@@ -128,12 +128,20 @@ export const createClient = ({ url, fetch, EventSource = null }) => {
     }
   };
 
-  const pages = async (token, path, query, map) => {
+  // Keyset pages: each request asks for the records after the last one received, by (updated, id),
+  // not for a page number. A record edited during the walk moves to the end and is read again; with
+  // numbered pages it shifts the others back by one, and the record at the page border is skipped
+  // for good (SYNC-4).
+  const keyset = async (token, path, base, first, map) => {
     const all = [];
-    for (let page = 1; ; page += 1) {
-      const result = await call('GET', path, { token, query: { ...query, perPage: String(PAGE), page: String(page) } });
+    let filter = first;
+    for (;;) {
+      const result = await call('GET', path, { token, query: { filter, sort: 'updated,id', perPage: String(PAGE), page: '1' } });
       all.push(...result.items.map(map));
-      if (!(result.totalPages > page)) return all;
+      const last = result.items.at(-1);
+      if (!(result.totalPages > 1) || !last) return all;
+      const at = quoted(last.updated);
+      filter = `${base} && (updated > ${at} || (updated = ${at} && id > ${quoted(last.id)}))`;
     }
   };
 
@@ -164,7 +172,7 @@ export const createClient = ({ url, fetch, EventSource = null }) => {
     // empty cursor pulls every record.
     pull: async (token, since, owner) => {
       const filter = since ? `${ofOwner(owner)} && updated >= ${quoted(since)}` : ofOwner(owner);
-      return pages(token, RECORDS, { filter, sort: 'updated' }, serverRecOf);
+      return keyset(token, RECORDS, ofOwner(owner), filter, serverRecOf);
     },
 
     // SYNC-6: the record of `(kind, key)` is patched, or created for an upsert. A delete never
